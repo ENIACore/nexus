@@ -4,7 +4,7 @@ BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
 LOG_FUNCS="${BASE_DIR}/scripts/log_funcs.sh"
 CF_API_KEY="${BASE_DIR}/keys/cloudflare.sh"
 
-LOG_FILE="${BASE_DIR}/cloudflare/logs/dns.log"
+LOG_FILE="${BASE_DIR}/cloudflare/log/dns.log"
 MAX_LOG_LINES=100
 
 DOMAIN="lamkin.dev"
