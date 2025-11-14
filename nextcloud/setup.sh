@@ -16,4 +16,7 @@ docker run -d \
     --env NEXTCLOUD_DATADIR="/mnt/nextcloud-data" \
     --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
     --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-    ghcr.io/nextcloud-releases/all-in-one:latest
+    ghcr.io/nextcloud-releases/all-in-one:beta
+
+# Temporarily using beta version due to breaking release see https://github.com/nextcloud/all-in-one#how-to-switch-the-channel on how to switch back to latest    
+# ghcr.io/nextcloud-releases/all-in-one:latest
