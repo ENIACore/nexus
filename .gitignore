@@ -1,5 +1,5 @@
 # Ignore all contents of keys directory
-#keys/*
+keys/*
 
 # Ignore all log directories at any level
-#**/log/*
+**/log/*
