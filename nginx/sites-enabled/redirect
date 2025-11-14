@@ -1,0 +1,24 @@
+# Redirect all traffic to HTTPS
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    #Server security
+    include /etc/nginx/snippets/security.conf;
+    include /etc/nginx/snippets/block-exploits.conf;
+
+    #Search engine indexing
+    add_header X-Robots-Tag "noindex, nofollow, nosnippet, noarchive" always;
+    location /robots.txt { return 200 "User-agent: *\nDisallow: /\n"; }
+    
+    # ACME challenge for Let's Encrypt
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+ 
