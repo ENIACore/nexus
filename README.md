@@ -1,6 +1,13 @@
 
 # Steps
 
+
+
+- Format and flash USB drive with Ubunutu Server LTS using balenaEtcher
+- Boot server from bootable flash drive and install ubuntu server
+- Connect server to wifi using /etc/netscape/<someconfig>.yaml instructions found at https://linuxconfig.org/ubuntu-22-04-connect-to-wifi-from-command-line
+- Go to router gateway (for ATT founda at http://192.168.1.254) and port forward 22, 443, 80880, and 80 to server (for ATT this is found at Firewall -> Nat/gaming)
+
 1. Install Ubuntu
 2. Connect to WiFi
 3. Port forward via NAT in ATT gateway
