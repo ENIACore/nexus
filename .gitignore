@@ -1,5 +1,7 @@
 # Ignore all contents of keys directory
 keys/*
+!keys/*.template
+!keys/.gitkeep
 
 # Ignore all log directories at any level
 **/log/*
