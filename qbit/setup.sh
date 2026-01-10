@@ -1,12 +1,13 @@
 #!/bin/bash
 
 export \
+  RAID_MOUNT=/mnt/RAID
   QBT_LEGAL_NOTICE=confirm \
   QBT_VERSION=latest \
   QBT_TORRENTING_PORT=6881 \
   QBT_WEBUI_PORT=8080 \
-  QBT_CONFIG_PATH="/mnt/qbt-data/config" \
-  QBT_DOWNLOADS_PATH="/mnt/qbt-data/downloads"
+  QBT_CONFIG_PATH="${RAID_MOUNT}/qbit-data/config" \
+  QBT_DOWNLOADS_PATH="${RAID_MOUNT}/qbit-data/downloads"
 docker run \
   -d \
   --network=container:gluetun \

@@ -59,3 +59,9 @@ network:
 - go to https://<ip addr>, copy passphrase and follow instillation steps
 - rm setup file and cp available site to enabled
 - go to nextcloud fqdn
+
+
+
+
+
+"Bypass authentication for clients on localhost" to qbit web ui

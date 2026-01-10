@@ -5,3 +5,9 @@ keys/*
 
 # Ignore all log directories at any level
 **/log/*
+
+# Ignore sites enabled on server, only contain sites available
+nginx/sites-enabled/**
+
+# Ignore static files, hosted projects should be externally managed
+nginx/www/**
