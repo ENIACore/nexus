@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# UUID Assigned to RAID array (Use get_RAID_UUID)
+export RAID_UUID=""
+# Typically /dev/md0
+export RAID_DEVICE=""
+# Relative RAID device (i.e last element, or md0)
+export REL_RAID_DEVICE=""
+# Whichever directory raid array is mounted to, typically directory in /mnt/
+export MOUNT_POINT=""

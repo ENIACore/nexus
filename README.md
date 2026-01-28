@@ -1,3 +1,6 @@
+# TODO
+- make RAID array permanent and use UUID
+
 
 # Steps
 
