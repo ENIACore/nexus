@@ -172,6 +172,8 @@ export NEXUS_JELLY_SUBDOMAIN=jelly.{domain}
 export NEXUS_QBIT_SUBDOMAIN=qbit.{domain}
 export NEXUS_VAULT_SUBDOMAIN=vault.{domain}
 export NEXUS_NEXTCLOUD_SUBDOMAIN=nextcloud.{domain}
+
+export NEXUS_USER=nexus
 """
     
     # Write config file
