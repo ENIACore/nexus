@@ -1,19 +1,20 @@
 #!/bin/bash
 
-BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
-LOG_FUNCS="${BASE_DIR}/scripts/log_funcs.sh"
-CF_API_KEY="${BASE_DIR}/keys/cloudflare.sh"
+source "/opt/nexus/lib/print.sh"
+source "/opt/nexus/lib/log.sh"
+source "/etc/nexus/conf/conf.sh"
 
-LOG_FILE="/var/log/nexus/cloudflare/dns.log"
-MAX_LOG_LINES=100
+# Get cloudflare api key for nexus
+NEXUS_CF_API_KEY="/etc/nexus/keys/cloudflare.sh"
+require_file ${NEXUS_CF_API_KEY} "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
+source ${NEXUS_CF_API_KEY}
 
-DOMAIN="lamkin.dev"
-ROOT_RECORD="lamkin.dev"
-WILDCARD_RECORD="*.lamkin.dev"
+NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
+NEXUS_CF_LOG_FILE="${NEXUS_CF_LOG_DIR}/dns.log"
+NEXUS_CF_LOG_MAX_LINES=100
 
-
-source ${LOG_FUNCS}
-source ${CF_API_KEY}
+# Initialize logger
+init_logger "${NEXUS_CF_LOG_FILE}" "${NEXUS_CF_LOG_MAX_LINES}"
 
 # Get public IPV4 address
 log "Detecting public IPv4 address..."
@@ -25,56 +26,54 @@ fi
 log "Current IPv4 address: ${PUBLIC_IPV4}"
 
 # Get Zone ID for domain
-log "Retrieving Zone ID for ${DOMAIN}..."
-ZONE_ID=$(curl -s https://api.cloudflare.com/client/v4/zones?name=${DOMAIN} -H "Authorization: Bearer ${CF_API_KEY}" | jq -r '.result[0].id')
+log "Retrieving Zone ID for ${NEXUS_DOMAIN}..."
+ZONE_ID=$(curl -s "https://api.cloudflare.com/client/v4/zones?name=${NEXUS_DOMAIN}" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" | jq -r '.result[0].id')
 if [[ -z "$ZONE_ID" || "$ZONE_ID" == "null" ]]; then
-    log "ERROR: Could not get Zone ID for ${DOMAIN}"
+    log "ERROR: Could not get Zone ID for ${NEXUS_DOMAIN}"
     exit 1
 fi
 log "Zone ID: ${ZONE_ID}"
 
 # Get A record IDs for domain
 log "Retrieving DNS record IDs..."
-ROOT_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${ROOT_RECORD}&type=A" -H "Authorization: Bearer ${CF_API_KEY}" | jq -r '.result[0].id')
-WILDCARD_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${WILDCARD_RECORD}&type=A" -H "Authorization: Bearer ${CF_API_KEY}" | jq -r '.result[0].id')
+ROOT_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${NEXUS_DOMAIN}&type=A" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" | jq -r '.result[0].id')
+WILDCARD_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=${NEXUS_WILDCARD_DOMAIN}&type=A" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" | jq -r '.result[0].id')
 
 if [[ -z "$ROOT_RECORD_ID" || "$ROOT_RECORD_ID" == "null" ]]; then
-    log "ERROR: Could not get Record ID for ${ROOT_RECORD}"
+    log "ERROR: Could not get Record ID for ${NEXUS_DOMAIN}"
     exit 1
 fi
-
 if [[ -z "$WILDCARD_RECORD_ID" || "$WILDCARD_RECORD_ID" == "null" ]]; then
-    log "ERROR: Could not get Record ID for ${WILDCARD_RECORD}"
+    log "ERROR: Could not get Record ID for ${NEXUS_WILDCARD_DOMAIN}"
     exit 1
 fi
-
 log "Root Record ID: ${ROOT_RECORD_ID}"
 log "Wildcard Record ID: ${WILDCARD_RECORD_ID}"
 
 # Update root A record to new IP address
-log "Updating A record for ${ROOT_RECORD} -> ${PUBLIC_IPV4}"
-ROOT_RECORD_RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${ROOT_RECORD_ID}" -H "Authorization: Bearer ${CF_API_KEY}" -H "Content-Type: application/json" --data "{\"type\":\"A\",\"name\":\"${ROOT_RECORD}\",\"content\":\"${PUBLIC_IPV4}\",\"ttl\":1,\"proxied\":true}")
+log "Updating A record for ${NEXUS_DOMAIN} -> ${PUBLIC_IPV4}"
+ROOT_RECORD_RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${ROOT_RECORD_ID}" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" -H "Content-Type: application/json" --data "{\"type\":\"A\",\"name\":\"${NEXUS_DOMAIN}\",\"content\":\"${PUBLIC_IPV4}\",\"ttl\":1,\"proxied\":true}")
 
 # Check if update was successful
 SUCCESS=$(echo "${ROOT_RECORD_RESPONSE}" | jq -r '.success')
 if [[ "${SUCCESS}" == "true" ]]; then
-    log "SUCCESS: Updated ${ROOT_RECORD} to ${PUBLIC_IPV4}"
+    log "SUCCESS: Updated ${NEXUS_DOMAIN} to ${PUBLIC_IPV4}"
 else
-    log "ERROR: Failed to update ${ROOT_RECORD}"
+    log "ERROR: Failed to update ${NEXUS_DOMAIN}"
     log "Response: ${ROOT_RECORD_RESPONSE}"
     exit 1
 fi
 
 # Update wildcard A record to new IP address
-log "Updating A record for ${WILDCARD_RECORD} -> ${PUBLIC_IPV4}"
-WILDCARD_RECORD_RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${WILDCARD_RECORD_ID}" -H "Authorization: Bearer ${CF_API_KEY}" -H "Content-Type: application/json" --data "{\"type\":\"A\",\"name\":\"${WILDCARD_RECORD}\",\"content\":\"${PUBLIC_IPV4}\",\"ttl\":1,\"proxied\":true}")
+log "Updating A record for ${NEXUS_WILDCARD_DOMAIN} -> ${PUBLIC_IPV4}"
+WILDCARD_RECORD_RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${WILDCARD_RECORD_ID}" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" -H "Content-Type: application/json" --data "{\"type\":\"A\",\"name\":\"${NEXUS_WILDCARD_DOMAIN}\",\"content\":\"${PUBLIC_IPV4}\",\"ttl\":1,\"proxied\":true}")
 
 # Check if update was successful
 SUCCESS=$(echo "${WILDCARD_RECORD_RESPONSE}" | jq -r '.success')
 if [[ "${SUCCESS}" == "true" ]]; then
-    log "SUCCESS: Updated ${WILDCARD_RECORD} to ${PUBLIC_IPV4}"
+    log "SUCCESS: Updated ${NEXUS_WILDCARD_DOMAIN} to ${PUBLIC_IPV4}"
 else
-    log "ERROR: Failed to update ${WILDCARD_RECORD}"
+    log "ERROR: Failed to update ${NEXUS_WILDCARD_DOMAIN}"
     log "Response: ${WILDCARD_RECORD_RESPONSE}"
     exit 1
 fi

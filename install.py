@@ -175,6 +175,7 @@ def create_config():
 
 # Nexus domain and subdomains
 export NEXUS_DOMAIN={domain}
+export NEXUS_WILDCARD_DOMAIN=*.{domain}
 export NEXUS_JELLY_SUBDOMAIN=jelly.{domain}
 export NEXUS_QBIT_SUBDOMAIN=qbit.{domain}
 export NEXUS_VAULT_SUBDOMAIN=vault.{domain}

@@ -1,4 +1,5 @@
 #!/bin/bash
+# Requirement check functions for Nexus scripts - /opt/nexus/lib/checks.sh
 
 source "/opt/nexus/lib/print.sh"
 source "/etc/nexus/conf/conf.sh"
