@@ -5,6 +5,8 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
+print_header "UPDATING DNS"
+
 # Get cloudflare api key for nexus
 NEXUS_CF_API_KEY="${NEXUS_ETC_DIR}/keys/cloudflare.sh"
 require_file ${NEXUS_CF_API_KEY} "Cloudflare api key file containing NEXUS_CF_API_KEY variable"

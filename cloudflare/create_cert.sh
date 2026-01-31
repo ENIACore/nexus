@@ -1,7 +1,11 @@
 #!/bin/bash
 
 source "/etc/nexus/conf/conf.sh"
-source "/opt/nexus/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
+
+print_header "CREATING DNS CERTIFICATE"
 
 # !Prior to running script
 # Add cloudflare.ini file to /etc/nexus/keys/ with API Key `dns_cloudflare_api_token = <token>`

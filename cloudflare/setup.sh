@@ -5,6 +5,8 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
+print_header "SETTING UP CLOUDFLARE DNS AND CRON JOB"
+
 NEXUS_CF_OPT_DIR="${NEXUS_OPT_DIR}/cloudflare"
 
 # Ensure API key is present 

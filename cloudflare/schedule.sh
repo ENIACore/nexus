@@ -5,6 +5,8 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
+print_header "SCHEDULING DNS UPDATE JOB"
+
 # Ensure API key is present 
 require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
 
