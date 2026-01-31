@@ -1,7 +1,5 @@
 #!/bin/bash
 
-
-
 #Create firewall
 sudo apt install iptables ipset ufw cron curl wget rsyslog -y
 
