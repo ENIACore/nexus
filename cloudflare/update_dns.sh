@@ -8,9 +8,9 @@ source "${NEXUS_OPT_DIR}/lib/log.sh"
 print_header "UPDATING DNS"
 
 # Get cloudflare api key for nexus
-NEXUS_CF_API_KEY="${NEXUS_ETC_DIR}/keys/cloudflare.sh"
-require_file ${NEXUS_CF_API_KEY} "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
-source ${NEXUS_CF_API_KEY}
+NEXUS_CF_API_KEY_FILE="${NEXUS_ETC_DIR}/keys/cloudflare.sh"
+require_file ${NEXUS_CF_API_KEY_FILE} "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
+source ${NEXUS_CF_API_KEY_FILE}
 
 # Initialize logger
 NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
