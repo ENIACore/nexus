@@ -4,6 +4,10 @@ Nexus Server Installation Script
 """
 
 import sys
+import os
+import subprocess
+import shutil
+from pathlib import Path
 
 
 class Colors:
@@ -51,6 +55,122 @@ def print_header(message):
     print(f"{Colors.MAGENTA}{Colors.BOLD}{'=' * 60}{Colors.RESET}\n")
 
 
+def run_command(command, description=None):
+    """Run a shell command and handle errors"""
+    if description:
+        print_info(description)
+    
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        return result.stdout
+    except subprocess.CalledProcessError as e:
+        print_error(f"Command failed: {command}")
+        print_error(f"Error: {e.stderr}")
+        sys.exit(1)
+
+
+def create_directories():
+    """Create necessary system directories"""
+    print_step("Creating system directories...")
+    
+    directories = [
+        "/opt/nexus",
+        "/var/log/nexus",
+        "/etc/nexus"
+    ]
+    
+    for directory in directories:
+        try:
+            Path(directory).mkdir(parents=True, exist_ok=True)
+            print_success(f"Created directory: {directory}")
+        except Exception as e:
+            print_error(f"Failed to create directory {directory}: {e}")
+            sys.exit(1)
+
+
+def clone_repository():
+    """Clone the nexus repository"""
+    print_step("Cloning nexus repository...")
+    
+    repo_url = "https://github.com/ENIACore/nexus.git"
+    clone_path = "/tmp/nexus"
+    
+    # Remove existing clone if present
+    if Path(clone_path).exists():
+        shutil.rmtree(clone_path)
+    
+    run_command(f"git clone {repo_url} {clone_path}", "Cloning repository...")
+    print_success(f"Repository cloned to {clone_path}")
+    
+    return clone_path
+
+
+def copy_repo_directories(repo_path):
+    """Copy repository subdirectories to /opt/nexus"""
+    print_step("Copying repository directories to /opt/nexus...")
+    
+    repo_root = Path(repo_path)
+    
+    subdirs = [
+        "cloudflare",
+        "RAID",
+        "fail2ban",
+        "ufw",
+        "jelly",
+        "nextcloud",
+        "nginx",
+        "qbit",
+        "vaultwarden"
+    ]
+    
+    for subdir in subdirs:
+        src = repo_root / subdir
+        dst = Path("/opt/nexus") / subdir
+        
+        if not src.exists():
+            print_warning(f"Source directory not found: {src}")
+            continue
+        
+        try:
+            if dst.exists():
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+            print_success(f"Copied {subdir} to /opt/nexus/{subdir}")
+        except Exception as e:
+            print_error(f"Failed to copy {subdir}: {e}")
+            sys.exit(1)
+
+def cleanup_temp_files():
+    """Remove temporary repository clone"""
+    print_step("Cleaning up temporary files...")
+    
+    temp_repo = "/tmp/nexus"
+    if Path(temp_repo).exists():
+        try:
+            shutil.rmtree(temp_repo)
+            print_success(f"Removed temporary directory: {temp_repo}")
+        except Exception as e:
+            print_warning(f"Failed to remove {temp_repo}: {e}")
+
+
 if __name__ == "__main__":
     print_header("NEXUS SERVER INSTALLATION")
-    print_info("Starting installation process...")
+    
+    # Check if running as root
+    if os.geteuid() != 0:
+        print_error("This script must be run as root")
+        sys.exit(1)
+    
+    create_directories()
+    repo_path = clone_repository()
+    copy_repo_directories(repo_path)
+    cleanup_temp_files()
+    
+    print_success("Initial setup complete!")
