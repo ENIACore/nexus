@@ -111,40 +111,32 @@ def clone_repository():
     
     return clone_path
 
-
-def copy_repo_directories(repo_path):
-    """Copy repository subdirectories to /opt/nexus"""
-    print_step("Copying repository directories to /opt/nexus...")
+def copy_repo_files(repo_path):
+    """Copy specific files from repository to /opt/nexus"""
+    print_step("Copying files to /opt/nexus...")
     
     repo_root = Path(repo_path)
     
-    subdirs = [
-        "cloudflare",
-        "RAID",
-        "fail2ban",
-        "ufw",
-        "jelly",
-        "nextcloud",
-        "nginx",
-        "qbit",
-        "vaultwarden"
+    # Define files to copy: (source_relative_path, destination_subdirectory)
+    files_to_copy = [
+        ("cloudflare/setup.sh", "cloudflare"),
+        # Add more files as needed
     ]
     
-    for subdir in subdirs:
-        src = repo_root / subdir
-        dst = Path("/opt/nexus") / subdir
+    for src_rel, dst_subdir in files_to_copy:
+        src = repo_root / src_rel
+        dst = Path("/opt/nexus") / dst_subdir / src.name
         
         if not src.exists():
-            print_warning(f"Source directory not found: {src}")
+            print_warning(f"Source file not found: {src}")
             continue
         
         try:
-            if dst.exists():
-                shutil.rmtree(dst)
-            shutil.copytree(src, dst)
-            print_success(f"Copied {subdir} to /opt/nexus/{subdir}")
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(src, dst)
+            print_success(f"Copied {src_rel} -> {dst_subdir}/{src.name}")
         except Exception as e:
-            print_error(f"Failed to copy {subdir}: {e}")
+            print_error(f"Failed to copy {src_rel}: {e}")
             sys.exit(1)
 
 def cleanup_temp_files():
@@ -200,7 +192,7 @@ if __name__ == "__main__":
     
     create_directories()
     repo_path = clone_repository()
-    copy_repo_directories(repo_path)
+    copy_repo_files(repo_path)
     create_config()
     cleanup_temp_files()
     
