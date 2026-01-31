@@ -4,7 +4,7 @@
 
 Run this command in your Ubuntu terminal to start the installation:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ENIACore/nexus/main/install.py | sudo python3 -
+curl -fsSL https://raw.githubusercontent.com/ENIACore/nexus/main/install.py -o /tmp/nexus-install.py && sudo python3 /tmp/nexus-install.py; rm -f /tmp/nexus-install.py
 ```
 
 ## Requirements
