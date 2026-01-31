@@ -10,6 +10,9 @@ source "/opt/nexus/lib/print.sh"
 NEXUS_CF_API_KEY_FILE="${NEXUS_ETC_DIR}/keys/cloudflare.ini"
 DRY_RUN=""
 
+# Ensure ini file is present 
+require_file "${NEXUS_CF_INI_FILE}" "Cloudflare ini file containing cloudflare api key" 
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -27,8 +30,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Verify credentials file exists
-if [[ ! -f "${NEXUS_CF_API_KEY_FILE}" ]]; then
-    print_error "Cloudflare credentials file not found at ${NEXUS_CF_API_KEY_FILE}"
+if [[ ! -f "${NEXUS_CF_INI_FILE}" ]]; then
+    print_error "Cloudflare credentials file not found at ${NEXUS_CF_INI_FILE}"
     exit 1
 fi
 
@@ -40,7 +43,7 @@ fi
 
 sudo certbot certonly \
   --dns-cloudflare \
-  --dns-cloudflare-credentials "${NEXUS_CF_API_KEY_FILE}" \
+  --dns-cloudflare-credentials "${NEXUS_CF_INI_FILE}" \
   --dns-cloudflare-propagation-seconds 60 \
   -d "${NEXUS_WILDCARD_DOMAIN}" \
   -d "${NEXUS_DOMAIN}" \

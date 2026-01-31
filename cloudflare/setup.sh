@@ -7,6 +7,9 @@ source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_CF_OPT_DIR="${NEXUS_OPT_DIR}/cloudflare"
 
+# Ensure API key is present 
+require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
+
 # Ensure nexus user exists
 ensure_nexus_user
 

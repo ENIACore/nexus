@@ -5,7 +5,10 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-NEXUS_CF_DNS_SCRIPT="/opt/nexus/cloudflare/update_dns.sh"
+# Ensure API key is present 
+require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
+
+NEXUS_CF_DNS_SCRIPT="${NEXUS_OPT_DIR}/cloudflare/update_dns.sh"
 NEXUS_CF_CRON_SCHEDULE="*/5 * * * *"
 NEXUS_CF_CRON_FILE="/etc/cron.d/nexus-cloudflare-dns"
 
