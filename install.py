@@ -83,7 +83,8 @@ def create_directories():
     directories = [
         "/opt/nexus",
         "/var/log/nexus",
-        "/etc/nexus"
+        "/etc/nexus",
+        "/etc/nexus/keys"
     ]
     
     for directory in directories:
@@ -143,10 +144,53 @@ def copy_repo_files(repo_path):
             print_error(f"Failed to copy {src_rel}: {e}")
             sys.exit(1)
 
+def copy_template_files(repo_path):
+    """Copy template files from keys/ to /etc/nexus/keys"""
+    print_step("Copying template files to /etc/nexus/keys...")
+
+    repo_root = Path(repo_path)
+    keys_src = repo_root / "keys"
+    keys_dst = Path("/etc/nexus/keys")
+
+    if not keys_src.exists():
+        print_warning(f"Keys directory not found: {keys_src}")
+        return
+
+    # Find all .template files
+    template_files = list(keys_src.glob("*.template"))
+
+    if not template_files:
+        print_warning("No template files found in keys directory")
+        return
+
+    copied_files = []
+    for template_file in template_files:
+        dst_file = keys_dst / template_file.name
+        try:
+            shutil.copy2(template_file, dst_file)
+            # Remove .template extension for the actual config file name
+            config_file = keys_dst / template_file.name.replace('.template', '')
+            copied_files.append(config_file.name)
+            print_success(f"Copied {template_file.name} -> /etc/nexus/keys/")
+        except Exception as e:
+            print_error(f"Failed to copy {template_file.name}: {e}")
+            sys.exit(1)
+
+    # Print required configuration files
+    print_header("REQUIRED CONFIGURATION FILES")
+    print_info("The following template files have been copied to /etc/nexus/keys/")
+    print_info("You must fill out these files with your actual credentials:\n")
+
+    for config_file in sorted(copied_files):
+        print(f"  {Colors.YELLOW}{Colors.BOLD}•{Colors.RESET} {Colors.WHITE}{config_file}{Colors.RESET}")
+
+    print(f"\n{Colors.CYAN}Location: /etc/nexus/keys/{Colors.RESET}")
+    print(f"{Colors.YELLOW}⚠ Remove the .template extension and fill in your credentials{Colors.RESET}\n")
+
 def cleanup_temp_files():
     """Remove temporary repository clone"""
     print_step("Cleaning up temporary files...")
-    
+
     temp_repo = "/tmp/nexus"
     if Path(temp_repo).exists():
         try:
@@ -207,7 +251,8 @@ if __name__ == "__main__":
     create_directories()
     repo_path = clone_repository()
     copy_repo_files(repo_path)
+    copy_template_files(repo_path)
     create_config()
     cleanup_temp_files()
-    
+
     print_success("Initial setup complete!")
