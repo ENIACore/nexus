@@ -119,8 +119,12 @@ def copy_repo_files(repo_path):
     
     # Define files to copy: (source_relative_path, destination_subdirectory)
     files_to_copy = [
+        # Cloudflare files
         ("cloudflare/setup.sh", "cloudflare"),
-        # Add more files as needed
+
+        # Central script files
+        ("lib/checks.sh", "lib"),
+        ("lib/print.sh", "lib"),
     ]
     
     for src_rel, dst_subdir in files_to_copy:
