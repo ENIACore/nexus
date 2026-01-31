@@ -8,6 +8,8 @@ source "${NEXUS_OPT_DIR}/lib/log.sh"
 print_header "SETTING UP CLOUDFLARE DNS AND CRON JOB"
 
 NEXUS_CF_OPT_DIR="${NEXUS_OPT_DIR}/cloudflare"
+NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
+NEXUS_CF_LOG_FILE="${NEXUS_CF_LOG_DIR}/dns.log"
 
 # Ensure API key is present 
 require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
@@ -20,7 +22,7 @@ sudo chown ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
 sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
 
 print_info "Log directory created successfully"
-print_step "Logs will be written to: ${NEXUS_CF_LOG_DIR}/dns.log"
+print_step "Logs will be written to: ${NEXUS_CF_LOG_FILE}"
 
 # Run initial DNS update
 print_step "Running initial DNS update..."
