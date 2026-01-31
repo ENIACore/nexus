@@ -166,10 +166,13 @@ def create_config():
     # Get domain from user - read from /dev/tty when piped
     try:
         with open('/dev/tty', 'r') as tty:
-            print(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}", end='', flush=True)
+            # Print to stdout (which goes to the terminal)
+            sys.stdout.write(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}")
+            sys.stdout.flush()
+            # Read from /dev/tty
             domain = tty.readline().strip()
-    except:
-        print_error("Could not read from terminal")
+    except Exception as e:
+        print_error(f"Could not read from terminal: {e}")
         sys.exit(1)
     
     if not domain:
