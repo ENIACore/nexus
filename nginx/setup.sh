@@ -2,8 +2,10 @@
 
 BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
 
-# Create the network first (if it doesn't exist)
-docker network create nexus 2>/dev/null || true
+# Ensure docker network exists
+if ! docker network inspect nexus >/dev/null 2>&1; then
+  docker network create nexus >/dev/null
+fi
 
 # Run nginx container with standard directory structure
 # - Config files: mounted read-only from host

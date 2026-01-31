@@ -1,7 +1,9 @@
 #!/bin/bash
 
-# Create the network first (if it doesn't exist)
-docker network create nexus
+# Ensure docker network exists
+if ! docker network inspect nexus >/dev/null 2>&1; then
+  docker network create nexus >/dev/null
+fi
 
 docker run -d --name vaultwarden \
     --network nexus \
