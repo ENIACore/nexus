@@ -159,6 +159,36 @@ def cleanup_temp_files():
         except Exception as e:
             print_warning(f"Failed to remove {temp_repo}: {e}")
 
+def create_config():
+    """Create configuration file with domain settings"""
+    print_step("Creating configuration file...")
+    
+    # Get domain from user
+    domain = input(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}").strip()
+    
+    if not domain:
+        print_error("Domain cannot be empty")
+        sys.exit(1)
+    
+    # Create config directory
+    config_dir = Path("/etc/nexus/conf")
+    config_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create config file content
+    config_content = f"""export NEXUS_DOMAIN={domain}
+export NEXUS_JELLY_SUBDOMAIN=jelly.{domain}
+export NEXUS_QBIT_SUBDOMAIN=qbit.{domain}
+export NEXUS_VAULT_SUBDOMAIN=vault.{domain}
+export NEXUS_NEXTCLOUD_SUBDOMAIN=nextcloud.{domain}
+"""
+    
+    # Write config file
+    config_file = config_dir / "config.sh"
+    config_file.write_text(config_content)
+    
+    print_success(f"Configuration file created at {config_file}")
+    print_info(f"Root domain: {domain}")
+
 
 if __name__ == "__main__":
     print_header("NEXUS SERVER INSTALLATION")
@@ -171,6 +201,7 @@ if __name__ == "__main__":
     create_directories()
     repo_path = clone_repository()
     copy_repo_directories(repo_path)
+    create_config()
     cleanup_temp_files()
     
     print_success("Initial setup complete!")
