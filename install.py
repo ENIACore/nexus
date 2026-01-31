@@ -163,8 +163,14 @@ def create_config():
     """Create configuration file with domain settings"""
     print_step("Creating configuration file...")
     
-    # Get domain from user
-    domain = input(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}").strip()
+    # Get domain from user - read from /dev/tty when piped
+    try:
+        with open('/dev/tty', 'r') as tty:
+            print(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}", end='', flush=True)
+            domain = tty.readline().strip()
+    except:
+        print_error("Could not read from terminal")
+        sys.exit(1)
     
     if not domain:
         print_error("Domain cannot be empty")
