@@ -171,13 +171,20 @@ def create_config():
     config_dir.mkdir(parents=True, exist_ok=True)
     
     # Create config file content
-    config_content = f"""export NEXUS_DOMAIN={domain}
+    config_content = f"""
+
+# Nexus domain and subdomains
+export NEXUS_DOMAIN={domain}
 export NEXUS_JELLY_SUBDOMAIN=jelly.{domain}
 export NEXUS_QBIT_SUBDOMAIN=qbit.{domain}
 export NEXUS_VAULT_SUBDOMAIN=vault.{domain}
 export NEXUS_NEXTCLOUD_SUBDOMAIN=nextcloud.{domain}
 
+# Nexus service user
 export NEXUS_USER=nexus
+
+# Nexus main log dir
+export NEXUS_LOG_DIR=/var/log/nexus
 """
     
     # Write config file

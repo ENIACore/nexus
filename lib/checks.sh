@@ -36,3 +36,29 @@ require_nexus_user() {
         exit 1
     fi
 }
+
+# Validate that a file exists
+# Usage: require_file "/path/to/file" "description"
+require_file() {
+    local file_path="$1"
+    local description="${2:-$1}"
+
+    if [[ ! -f "${file_path}" ]]; then
+        print_error "Required file not found: ${description}"
+        print_error "Path: ${file_path}"
+        exit 1
+    fi
+}
+
+# Validate that a directory exists
+# Usage: require_dir "/path/to/dir" "description"
+require_dir() {
+    local dir_path="$1"
+    local description="${2:-$1}"
+
+    if [[ ! -d "${dir_path}" ]]; then
+        print_error "Required directory not found: ${description}"
+        print_error "Path: ${dir_path}"
+        exit 1
+    fi
+}
