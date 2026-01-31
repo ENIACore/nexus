@@ -1,19 +1,38 @@
 #!/bin/bash
 
 source "/etc/nexus/conf/conf.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
+
+NEXUS_CF_OPT_DIR="${NEXUS_OPT_DIR}/cloudflare"
 
 # Ensure nexus user exists
 ensure_nexus_user
-
-# Create log directory with appropriate permissions
-NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
-
-echo "Creating nexus cloudflare log directory at ${NEXUS_CF_LOG_DIR}..."
-sudo mkdir -p "${NEXUS_CF_LOG_DIR}"
 
 # Set ownership to nexus user so cron job can write logs
 sudo chown ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
 sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
 
-echo "Log directory created successfully"
-echo "Logs will be written to: ${NEXUS_CF_LOG_DIR}/cf-dns.log"
+print_info "Log directory created successfully"
+print_step "Logs will be written to: ${NEXUS_CF_LOG_DIR}/dns.log"
+
+# Run initial DNS update
+print_step "Running initial DNS update..."
+source "${NEXUS_CF_OPT_DIR}/update_dns.sh"
+
+if [[ $? -ne 0 ]]; then
+    print_error "ERROR: Initial DNS update failed"
+    exit 1
+fi
+
+# Schedule automated DNS updates
+print_step "Scheduling automated DNS updates..."
+source "${NEXUS_CF_OPT_DIR}/schedule.sh"
+
+if [[ $? -ne 0 ]]; then
+    print_error "ERROR: Failed to schedule DNS updates"
+    exit 1
+fi
+
+echo "Cloudflare setup complete"

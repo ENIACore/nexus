@@ -1,19 +1,19 @@
 #!/bin/bash
 
-source "/opt/nexus/lib/print.sh"
-source "/opt/nexus/lib/log.sh"
 source "/etc/nexus/conf/conf.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 # Get cloudflare api key for nexus
-NEXUS_CF_API_KEY="/etc/nexus/keys/cloudflare.sh"
+NEXUS_CF_API_KEY="${NEXUS_ETC_DIR}/keys/cloudflare.sh"
 require_file ${NEXUS_CF_API_KEY} "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
 source ${NEXUS_CF_API_KEY}
 
+# Initialize logger
 NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
 NEXUS_CF_LOG_FILE="${NEXUS_CF_LOG_DIR}/dns.log"
 NEXUS_CF_LOG_MAX_LINES=100
-
-# Initialize logger
 init_logger "${NEXUS_CF_LOG_FILE}" "${NEXUS_CF_LOG_MAX_LINES}"
 
 # Get public IPV4 address

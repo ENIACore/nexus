@@ -122,10 +122,14 @@ def copy_repo_files(repo_path):
     files_to_copy = [
         # Cloudflare files
         ("cloudflare/setup.sh", "cloudflare"),
+        ("cloudflare/schedule.sh", "cloudflare"),
+        ("cloudflare/update_dns.sh", "cloudflare"),
+        ("cloudflare/create_cert.sh", "cloudflare"),
 
         # Central script files
         ("lib/checks.sh", "lib"),
         ("lib/print.sh", "lib"),
+        ("lib/log.sh", "lib"),
     ]
     
     for src_rel, dst_subdir in files_to_copy:
@@ -218,24 +222,28 @@ def create_config():
     config_content = f"""
 
 # Nexus domain and subdomains
-export NEXUS_DOMAIN={domain}
-export NEXUS_WILDCARD_DOMAIN=*.{domain}
-export NEXUS_JELLY_SUBDOMAIN=jelly.{domain}
-export NEXUS_QBIT_SUBDOMAIN=qbit.{domain}
-export NEXUS_VAULT_SUBDOMAIN=vault.{domain}
-export NEXUS_NEXTCLOUD_SUBDOMAIN=nextcloud.{domain}
+export NEXUS_DOMAIN="{domain}"
+export NEXUS_WILDCARD_DOMAIN="*.{domain}"
+export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
+export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
+export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
+export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
 
 # Nexus service user
 export NEXUS_USER=nexus
 
 # Nexus main log dir
-export NEXUS_LOG_DIR=/var/log/nexus
+export NEXUS_LOG_DIR="/var/log/nexus"
+
+# Nexus main opt and etc dir
+export NEXUS_OPT_DIR="/opt/nexus"
+export NEXUS_ETC_DIR="/etc/nexus"
 """
     
     # Write config file
-    config_file = config_dir / "config.sh"
+    config_file = config_dir / "conf.sh"
     config_file.write_text(config_content)
-    
+
     print_success(f"Configuration file created at {config_file}")
     print_info(f"Root domain: {domain}")
 

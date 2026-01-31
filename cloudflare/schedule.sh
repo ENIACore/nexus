@@ -1,7 +1,9 @@
 #!/bin/bash
 
-source "/opt/nexus/lib/checks.sh"
 source "/etc/nexus/conf/conf.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_CF_DNS_SCRIPT="/opt/nexus/cloudflare/update_dns.sh"
 NEXUS_CF_CRON_SCHEDULE="*/5 * * * *"
@@ -16,7 +18,7 @@ if [[ -f "${NEXUS_CF_CRON_FILE}" ]]; then
     exit 1
 fi
 
-echo "Creating system cron job at ${NEXUS_CF_CRON_FILE}..."
+print_step "Creating system cron job at ${NEXUS_CF_CRON_FILE}..."
 
 # Create system cron job that runs as nexus user
 sudo tee "${NEXUS_CF_CRON_FILE}" > /dev/null << EOF
@@ -27,14 +29,14 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 # Run on boot
-@reboot nexus ${NEXUS_CF_DNS_SCRIPT}
+@reboot ${NEXUS_USER} ${NEXUS_CF_DNS_SCRIPT}
 
 # Run every 5 minutes
-${NEXUS_CF_CRON_SCHEDULE} ${NEXUS_USER} ${NEXUS_CF_CRON_SCHEDULE}
+${NEXUS_CF_CRON_SCHEDULE} ${NEXUS_USER} ${NEXUS_CF_DNS_SCRIPT}
 EOF
 
 # Set proper permissions for system cron file
 sudo chmod 644 "${NEXUS_CF_CRON_FILE}"
 
-echo "System cron job created successfully"
-echo "DNS update will run every 5 minutes as user '${NEXUS_USER}'"
+print_info "System cron job created successfully"
+print_info "DNS update will run every 5 minutes as user '${NEXUS_USER}'"
