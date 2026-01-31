@@ -11,7 +11,7 @@ print_header "CREATING DNS CERTIFICATE"
 # Add cloudflare.ini file to /etc/nexus/keys/ with API Key `dns_cloudflare_api_token = <token>`
 # Chmod 600 cloudflare.ini
 
-NEXUS_CF_API_KEY_FILE="${NEXUS_ETC_DIR}/keys/cloudflare.ini"
+NEXUS_CF_INI_FILE="${NEXUS_ETC_DIR}/keys/cloudflare.ini"
 DRY_RUN=""
 
 # Ensure ini file is present 
