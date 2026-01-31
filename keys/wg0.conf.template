@@ -1,0 +1,17 @@
+[Interface]
+# Bouncing = 
+# NetShield = 
+# Moderate NAT = off
+# NAT-PMP (Port Forwarding) = on
+# VPN Accelerator = on
+PrivateKey = 
+Address = 
+DNS = 
+
+[Peer]
+# US-<state>#<num>
+PublicKey = 
+AllowedIPs = 0.0.0.0/0, ::/0
+Endpoint = 
+
+PersistentKeepalive = 25

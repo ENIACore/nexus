@@ -21,7 +21,7 @@ server {
 
 
     location / {
-        proxy_pass http://gluetun:8080;
+        proxy_pass http://qbittorrent:8080;
         include /etc/nginx/snippets/http-proxy-params.conf;
     }
 

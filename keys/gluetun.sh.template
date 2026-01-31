@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# Gluetun container secrets
-export WIREGUARD_PRIVATE_KEY=<value>
-export OPENVPN_USER=
-export OPENVPN_PASSWORD=
