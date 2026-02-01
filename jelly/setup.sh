@@ -24,7 +24,7 @@ mkdir -p "${JELLY_MEDIA_DIR}"
 # Ensure docker network exists
 if ! docker network inspect nexus >/dev/null 2>&1; then
     print_step "Creating Docker network 'nexus'"
-    docker network create nexus >/dev/null
+    docker network create --driver bridge --subnet 172.18.0.0/16 nexus >/dev/null
 fi
 
 # Run Jellyfin container

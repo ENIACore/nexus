@@ -16,7 +16,7 @@ require_dir "/etc/letsencrypt/live/${NEXUS_DOMAIN}" "Letsencrypt directory conta
 # Ensure docker network exists
 if ! docker network inspect nexus >/dev/null 2>&1; then
   print_step "Creating Docker network 'nexus'"
-  docker network create nexus >/dev/null
+  docker network create --driver bridge --subnet 172.18.0.0/16 nexus >/dev/null
 fi
 
 # Copy nginx configuration from opt to /etc/nexus/nginx
