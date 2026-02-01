@@ -49,6 +49,7 @@ docker run -d \
     --name nexus-proxy \
     --restart unless-stopped \
     --network nexus \
+    --ip 172.18.0.254 \
     -p 80:80 \
     -p 443:443 \
     --read-only \
