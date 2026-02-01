@@ -138,6 +138,10 @@ def copy_repo_path(repo_path):
         ("nginx/snippets", "nginx/snippets"),
         ("nginx/sites-available", "nginx/sites-available"),
 
+        # Fail2ban files
+        ("f2b/setup.sh", "f2b/setup.sh"),
+        ("f2b/reload.sh", "f2b/reload.sh"),
+
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
         ("lib/print.sh", "lib/print.sh"),
