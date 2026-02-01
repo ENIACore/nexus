@@ -10,10 +10,10 @@ NEXUS_NGINX_LOG_DIR="${NEXUS_LOG_DIR}/nginx"
 
 print_header "CONFIGURING FAIL2BAN FOR NEXUS NGINX"
 
-# Ensure nginx log directory exists
+# Ensuring nginx log directory exists
 require_dir "${NEXUS_NGINX_LOG_DIR}" "Nginx log directory for fail2ban monitoring"
 
-# Install fail2ban
+# Installing fail2ban
 print_step "Installing fail2ban"
 if ! command -v fail2ban-client &> /dev/null; then
     sudo apt update && sudo apt install fail2ban -y
@@ -21,13 +21,13 @@ else
     print_info "fail2ban already installed"
 fi
 
-# Create fail2ban configuration directory
+# Creating fail2ban configuration directory
 print_step "Creating fail2ban configuration directory at ${NEXUS_F2B_ETC_DIR}"
 mkdir -p "${NEXUS_F2B_ETC_DIR}"
 
-# Generate jail.local with environment variables
+# Generating jail.local with environment variables
 print_step "Generating jail.local configuration"
-cat > "${NEXUS_F2B_ETC_DIR}/jail.local" << EOF
+cat > "${NEXUS_F2B_OPT_DIR}/jail.local" << EOF
 [DEFAULT]
 bantime = 1d
 findtime = 15m
@@ -58,11 +58,15 @@ enabled = true
 logpath = ${NEXUS_NGINX_LOG_DIR}/error.log
 EOF
 
-# Create symlink to system fail2ban directory
+# Copying latest jail.local file to fail2ban config directory
+print_step "Copying latest jail.local to ${NEXUS_F2B_ETC_DIR}"
+cp "${NEXUS_F2B_OPT_DIR}/jail.local" "${NEXUS_F2B_ETC_DIR}/jail.local"
+
+# Creating symlink to system fail2ban directory
 print_step "Creating symlink to system fail2ban configuration"
 sudo ln -sf "${NEXUS_F2B_ETC_DIR}/jail.local" /etc/fail2ban/jail.local
 
-# Restart and enable fail2ban
+# Restarting and enabling fail2ban
 print_step "Restarting fail2ban service"
 sudo systemctl restart fail2ban
 sudo systemctl enable fail2ban

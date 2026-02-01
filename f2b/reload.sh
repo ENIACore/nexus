@@ -6,12 +6,16 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 NEXUS_F2B_ETC_DIR="${NEXUS_ETC_DIR}/f2b"
 NEXUS_F2B_OPT_DIR="${NEXUS_OPT_DIR}/f2b"
 
-# Ensure jail.local exists
+# Ensuring jail.local exists
 require_file "${NEXUS_F2B_OPT_DIR}/jail.local" "fail2ban configuration file"
 
 print_header "RELOADING FAIL2BAN"
 
-# Create symlink to system fail2ban directory with latest config
+# Copying latest jail.local file to fail2ban config directory
+print_step "Copying latest jail.local to ${NEXUS_F2B_ETC_DIR}"
+cp "${NEXUS_F2B_OPT_DIR}/jail.local" "${NEXUS_F2B_ETC_DIR}/jail.local"
+
+# Creating symlink to system fail2ban directory with latest config
 print_step "Ensuring symlink to system fail2ban configuration"
 sudo ln -sf "${NEXUS_F2B_ETC_DIR}/jail.local" /etc/fail2ban/jail.local
 
