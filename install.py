@@ -115,6 +115,7 @@ def clone_repository():
 def copy_repo_path(repo_path):
     """Copy files or directories from repository to /opt/nexus"""
     print_step("Copying paths to /opt/nexus...")
+    print_step("test paths to /opt/nexus...")
 
     repo_root = Path(repo_path)
 
