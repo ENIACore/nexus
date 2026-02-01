@@ -283,6 +283,11 @@ export NEXUS_ETC_DIR="/etc/nexus"
 
 if __name__ == "__main__":
     print_header("NEXUS SERVER INSTALLATION")
+    print_header("NEXUS SERVER INSTALLATION")
+    print_header("NEXUS SERVER INSTALLATION")
+    print_header("NEXUS SERVER INSTALLATION")
+    print_header("NEXUS SERVER INSTALLATION")
+    print_header("NEXUS SERVER INSTALLATION")
     
     # Check if running as root
     if os.geteuid() != 0:
