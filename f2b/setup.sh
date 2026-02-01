@@ -72,11 +72,12 @@ sudo systemctl restart fail2ban
 sudo systemctl enable fail2ban
 
 if [ $? -eq 0 ]; then
-    print_success "fail2ban configured successfully"
     print_info "Active jails can be checked with: sudo fail2ban-client status"
     print_info "To update configuration:"
     print_info "1. Edit ${NEXUS_F2B_ETC_DIR}/jail.local"
     print_info "2. Run ${NEXUS_F2B_OPT_DIR}/reload.sh to apply changes"
+    print_info ""
+    print_success "fail2ban configured successfully"
 else
     print_error "Failed to configure fail2ban"
     exit 1
