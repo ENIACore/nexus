@@ -141,6 +141,7 @@ def copy_repo_path(repo_path):
         # Fail2ban files
         ("f2b/setup.sh", "f2b/setup.sh"),
         ("f2b/reload.sh", "f2b/reload.sh"),
+        ("f2b/status.sh", "f2b/status.sh"),
 
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
