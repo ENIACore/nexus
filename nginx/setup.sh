@@ -44,6 +44,9 @@ print_info "3. Run ${NEXUS_NGINX_OPT_DIR}/reload.sh script to reload running nex
 print_step "Creating nginx log directory"
 mkdir -p /var/log/nexus/nginx
 
+print_info "nexus nginx etc directory to be mounted is ${NEXUS_NGINX_ETC_DIR}"
+print_info "and snippets directory is ${NEXUS_NGINX_ETC_DIR}/snippets" 
+
 # Then in your docker run command, replace the --log-driver lines with:
 docker run -d \
     --name nexus-proxy \
