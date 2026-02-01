@@ -172,9 +172,7 @@ def copy_repo_path(repo_path):
         ("lib/log.sh", "lib/log.sh"),
 
         # Country bans 
-        ("ufw/ban_countries.sh", "ufw/ban_countries.sh"),
-        ("ufw/us_ipv4.txt", "ufw/us_ipv4.txt"),
-        ("ufw/us_ipv6.txt", "ufw/us_ipv6.txt"),
+        ("cloudflare/ban_countries.sh", "cloudflare/ban_countries.sh"),
     ]
 
     for src_rel, dst_rel in paths_to_copy:
