@@ -112,38 +112,59 @@ def clone_repository():
     
     return clone_path
 
-def copy_repo_files(repo_path):
-    """Copy specific files from repository to /opt/nexus"""
-    print_step("Copying files to /opt/nexus...")
-    
+def copy_repo_path(repo_path):
+    """Copy files or directories from repository to /opt/nexus"""
+    print_step("Copying paths to /opt/nexus...")
+
     repo_root = Path(repo_path)
-    
-    # Define files to copy: (source_relative_path, destination_subdirectory)
-    files_to_copy = [
+
+    # Define paths to copy: (source_relative_path, destination_relative_path)
+    paths_to_copy = [
         # Cloudflare files
-        ("cloudflare/setup.sh", "cloudflare"),
-        ("cloudflare/schedule.sh", "cloudflare"),
-        ("cloudflare/update_dns.sh", "cloudflare"),
-        ("cloudflare/create_cert.sh", "cloudflare"),
+        ("cloudflare/setup.sh", "cloudflare/setup.sh"),
+        ("cloudflare/schedule.sh", "cloudflare/schedule.sh"),
+        ("cloudflare/update_dns.sh", "cloudflare/update_dns.sh"),
+        ("cloudflare/create_cert.sh", "cloudflare/create_cert.sh"),
+
+        # Nginx files
+        ("nginx/setup.sh", "nginx/setup.sh"),
+        ("nginx/reload.sh", "nginx/reload.sh"),
+        ("nginx/update.sh", "nginx/update.sh"),
+        ("nginx/tail-logs.sh", "nginx/tail-logs.sh"),
+
+        # Nginx directories
+        ("nginx/conf", "nginx/conf"),
+        ("nginx/conf.d", "nginx/conf.d"),
+        ("nginx/snippets", "nginx/snippets"),
+        ("nginx/sites-available", "nginx/sites-available"),
 
         # Central script files
-        ("lib/checks.sh", "lib"),
-        ("lib/print.sh", "lib"),
-        ("lib/log.sh", "lib"),
+        ("lib/checks.sh", "lib/checks.sh"),
+        ("lib/print.sh", "lib/print.sh"),
+        ("lib/log.sh", "lib/log.sh"),
     ]
-    
-    for src_rel, dst_subdir in files_to_copy:
+
+    for src_rel, dst_rel in paths_to_copy:
         src = repo_root / src_rel
-        dst = Path("/opt/nexus") / dst_subdir / src.name
-        
+        dst = Path("/opt/nexus") / dst_rel
+
         if not src.exists():
-            print_warning(f"Source file not found: {src}")
+            print_warning(f"Source path not found: {src}")
             continue
-        
+
         try:
             dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, dst)
-            print_success(f"Copied {src_rel} -> {dst_subdir}/{src.name}")
+
+            if src.is_dir():
+                # Copy directory
+                if dst.exists():
+                    shutil.rmtree(dst)
+                shutil.copytree(src, dst)
+                print_success(f"Copied directory {src_rel} -> {dst_rel}")
+            else:
+                # Copy file
+                shutil.copy2(src, dst)
+                print_success(f"Copied file {src_rel} -> {dst_rel}")
         except Exception as e:
             print_error(f"Failed to copy {src_rel}: {e}")
             sys.exit(1)
@@ -258,7 +279,7 @@ if __name__ == "__main__":
     
     create_directories()
     repo_path = clone_repository()
-    copy_repo_files(repo_path)
+    copy_repo_path(repo_path)
     copy_template_files(repo_path)
     create_config()
     cleanup_temp_files()
