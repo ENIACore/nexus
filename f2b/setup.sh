@@ -41,21 +41,23 @@ port = 22
 [nginx-http-auth]
 enabled = true
 mode = aggressive
-logpath = ${NEXUS_NGINX_LOG_DIR}/access.log
-          ${NEXUS_NGINX_LOG_DIR}/error.log
+backend = auto
+logpath = /var/log/nexus/nginx/*.log
 
 [nginx-bad-request]
 enabled = true
-logpath = ${NEXUS_NGINX_LOG_DIR}/access.log
-          ${NEXUS_NGINX_LOG_DIR}/error.log
+backend = auto
+logpath = /var/log/nexus/nginx/*.log
 
 [nginx-botsearch]
 enabled = true
-logpath = ${NEXUS_NGINX_LOG_DIR}/access.log
+backend = auto
+logpath = /var/log/nexus/nginx/access.log
 
 [nginx-limit-req]
 enabled = true
-logpath = ${NEXUS_NGINX_LOG_DIR}/error.log
+backend = auto
+logpath = /var/log/nexus/nginx/error.log
 EOF
 
 # Copying latest jail.local file to fail2ban config directory
