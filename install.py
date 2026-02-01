@@ -118,8 +118,6 @@ def copy_repo_path(repo_path):
 
     repo_root = Path(repo_path)
 
-    print_step("fuck you ")
-
     # Define paths to copy: (source_relative_path, destination_relative_path)
     paths_to_copy = [
         # Cloudflare files
@@ -149,6 +147,18 @@ def copy_repo_path(repo_path):
         ("ufw/setup.sh", "ufw/setup.sh"),
         ("ufw/schedule.sh", "ufw/schedule.sh"),
         ("ufw/update.sh", "ufw/update.sh"),
+
+        # Jellyfin files
+        ("jelly/setup.sh", "jelly/setup.sh"),
+
+        # Nextcloud files
+        ("nextcloud/setup.sh", "nextcloud/setup.sh"),
+
+        # qBittorrent files
+        ("qbit/setup.sh", "qbit/setup.sh"),
+
+        # Vaultwarden files
+        ("vault/setup.sh", "vault/setup.sh"),
 
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
@@ -239,18 +249,25 @@ def cleanup_temp_files():
 def create_config():
     """Create configuration file with domain settings"""
     print_step("Creating configuration file...")
-    
+
     # Get domain from user
     domain = input(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}").strip()
-    
+
     if not domain:
         print_error("Domain cannot be empty")
         sys.exit(1)
-    
+
+    # Get RAID mount path from user
+    raid_mount = input(f"{Colors.CYAN}Enter your RAID mount path (e.g., /mnt/RAID): {Colors.RESET}").strip()
+
+    if not raid_mount:
+        print_error("RAID mount path cannot be empty")
+        sys.exit(1)
+
     # Create config directory
     config_dir = Path("/etc/nexus/conf")
     config_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Create config file content
     config_content = f"""
 
@@ -271,14 +288,18 @@ export NEXUS_LOG_DIR="/var/log/nexus"
 # Nexus main opt and etc dir
 export NEXUS_OPT_DIR="/opt/nexus"
 export NEXUS_ETC_DIR="/etc/nexus"
+
+# RAID mount path
+export NEXUS_RAID_MOUNT="{raid_mount}"
 """
-    
+
     # Write config file
     config_file = config_dir / "conf.sh"
     config_file.write_text(config_content)
 
     print_success(f"Configuration file created at {config_file}")
     print_info(f"Root domain: {domain}")
+    print_info(f"RAID mount path: {raid_mount}")
 
 
 if __name__ == "__main__":
