@@ -22,10 +22,19 @@ mkdir -p "${JELLY_CACHE_DIR}"
 mkdir -p "${JELLY_MEDIA_DIR}"
 
 # Ensure docker network exists
-if ! docker network inspect nexus >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus'"
-    docker network create --driver bridge --subnet 172.18.0.0/16 nexus-net >/dev/null
+if ! docker network inspect nexus-net >/dev/null 2>&1; then
+    print_step "Creating Docker network 'nexus-net'"
+
+    if ! docker network create \
+        --driver bridge \
+        --subnet 172.18.0.0/16 \
+        --gateway 172.18.0.1 \
+        nexus-net >/dev/null 2>&1; then
+        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
+        exit 1
+    fi
 fi
+
 
 # Run Jellyfin container
 print_step "Starting Jellyfin container"
