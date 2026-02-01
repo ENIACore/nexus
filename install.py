@@ -119,6 +119,7 @@ def copy_repo_path(repo_path):
     repo_root = Path(repo_path)
 
     # Define paths to copy: (source_relative_path, destination_relative_path)
+    print_step("fuck you")
     paths_to_copy = [
         # Cloudflare files
         ("cloudflare/setup.sh", "cloudflare/setup.sh"),
