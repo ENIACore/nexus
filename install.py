@@ -143,6 +143,11 @@ def copy_repo_path(repo_path):
         ("f2b/reload.sh", "f2b/reload.sh"),
         ("f2b/status.sh", "f2b/status.sh"),
 
+        # ufw files
+        ("ufw/setup.sh", "ufw/setup.sh"),
+        ("ufw/schedule.sh", "ufw/schedule.sh"),
+        ("ufw/update.sh", "ufw/update.sh"),
+
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
         ("lib/print.sh", "lib/print.sh"),
