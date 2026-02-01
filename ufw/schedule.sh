@@ -31,14 +31,15 @@ SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
 # Run on boot
-@reboot ${NEXUS_USER} ${NEXUS_UFW_BL_SCRIPT}
+@reboot root ${NEXUS_UFW_BL_SCRIPT}
 
-# Run daily
-${NEXUS_UFW_CRON_SCHEDULE} ${NEXUS_USER} ${NEXUS_UFW_BL_SCRIPT}
+# Run daily - requires root due to commands in blocklist.sh
+${NEXUS_UFW_CRON_SCHEDULE} root ${NEXUS_UFW_BL_SCRIPT}
 EOF
 
 # Set proper permissions for system cron file
 sudo chmod 644 "${NEXUS_UFW_BL_SCRIPT}"
+sudo chmod +x "${NEXUS_UFW_BL_SCRIPT}"
 
 print_info "System cron job created successfully"
 print_info "UFW blocklist update will run daily as user '${NEXUS_USER}'"
