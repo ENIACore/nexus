@@ -5,20 +5,25 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-NEXUS_UFW_OPT_DIR="${NEXUS_OPT_DIR}/ufw"
-BLOCKLIST_SCRIPT="${NEXUS_UFW_OPT_DIR}/blocklist.sh"
+NEXUS_UFW_BL_SCRIPT="${NEXUS_ETC_DIR}/ufw/blocklist.sh"
+
+# Initialize logger
+NEXUS_UFW_LOG_DIR="${NEXUS_LOG_DIR}/ufw"
+NEXUS_UFW_LOG_FILE="${NEXUS_UFW_LOG_DIR}/ufw.log"
+NEXUS_UFW_LOG_MAX_LINES=100
+init_logger "${NEXUS_UFW_LOG_FILE}" "${NEXUS_UFW_LOG_MAX_LINES}"
 
 print_header "UPDATING UFW IP BLOCKLIST"
 
 # Ensure blocklist script exists
-require_file "${BLOCKLIST_SCRIPT}" "UFW blocklist updater script"
+require_file "${NEXUS_UFW_BL_SCRIPT}" "UFW blocklist updater script"
 
 # Run blocklist update
 print_step "Running IP blocklist update"
-if sudo "${BLOCKLIST_SCRIPT}"; then
-    print_success "IP blocklist updated successfully"
+if sudo "${NEXUS_UFW_BL_SCRIPT}"; then
+    log "IP blocklist updated successfully"
 else
-    print_error "Failed to update IP blocklist"
+    log "Failed to update IP blocklist"
     exit 1
 fi
 
