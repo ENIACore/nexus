@@ -1,89 +1,70 @@
 #!/bin/bash
-# RAID Reassembly Script (UUID-based)
 
-set -euo pipefail
+source "/etc/nexus/conf/conf.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
-RAID_CONFIG="${BASE_DIR}/keys/RAID.sh"
-
-# Ensure config exists
-if [[ ! -f "$RAID_CONFIG" ]]; then
-    echo -e "${RED}RAID config not found: $RAID_CONFIG${NC}"
-    exit 1
-fi
-
-source "$RAID_CONFIG"
+print_header "STARTING RAID ARRAY"
 
 # Must be root
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}This script must be run as root${NC}"
+    print_error "This script must be run as root"
     exit 1
 fi
 
-echo -e "${YELLOW}========================================${NC}"
-echo -e "${YELLOW}      Start RAID Array                  ${NC}"
-echo -e "${YELLOW}========================================${NC}"
-echo
+# Ensure RAID device is configured
+if [[ -z "${NEXUS_RAID_DEVICE}" ]]; then
+    print_error "RAID device not configured in /etc/nexus/conf/conf.sh"
+    exit 1
+fi
 
 # Assemble RAID array using mdadm.conf (UUID-based)
-echo -e "${YELLOW}Assembling RAID array using UUIDs from mdadm.conf...${NC}"
+print_step "Assembling RAID array using UUIDs from /etc/mdadm/mdadm.conf"
 if mdadm --assemble --scan; then
-    echo -e "${GREEN}✓ RAID array assembled${NC}"
+    print_success "RAID array assembled"
 else
-    echo -e "${RED}Error: Failed to assemble RAID array${NC}"
+    print_error "Failed to assemble RAID array"
+    print_info "Try running: sudo mdadm --assemble --scan --verbose"
     exit 1
 fi
-
-echo
 
 # Wait briefly for device to be ready
 sleep 1
 
 # Verify RAID is active
-echo -e "${YELLOW}Verifying RAID status...${NC}"
-if ! grep -q ${REL_RAID_DEVICE} /proc/mdstat; then
-    echo -e "${RED}Error: RAID array not found in /proc/mdstat${NC}"
+print_step "Verifying RAID status"
+if ! grep -q ${NEXUS_REL_RAID_DEVICE} /proc/mdstat; then
+    print_error "RAID array not found in /proc/mdstat"
     exit 1
 fi
 
 # Check RAID health
-RAID_STATE=$(mdadm --detail "$RAID_DEVICE" | grep "State :" | awk '{print $3}')
-echo "RAID State: $RAID_STATE"
+RAID_STATE=$(mdadm --detail "$NEXUS_RAID_DEVICE" | grep "State :" | awk '{print $3}')
+print_info "RAID State: $RAID_STATE"
 
 if [[ "$RAID_STATE" != "clean" ]]; then
-    echo -e "${YELLOW}Warning: RAID state is not clean${NC}"
-    mdadm --detail "$RAID_DEVICE"
+    print_warning "RAID state is not clean"
+    mdadm --detail "$NEXUS_RAID_DEVICE"
 fi
 
-echo
-
 # Create mount point if it doesn't exist
-if [[ ! -d "$MOUNT_POINT" ]]; then
-    echo -e "${YELLOW}Creating mount point: $MOUNT_POINT${NC}"
-    mkdir -p "$MOUNT_POINT"
+if [[ ! -d "$NEXUS_RAID_MOUNT" ]]; then
+    print_step "Creating mount point: $NEXUS_RAID_MOUNT"
+    mkdir -p "$NEXUS_RAID_MOUNT"
 fi
 
 # Mount the RAID array
-echo -e "${YELLOW}Mounting RAID to $MOUNT_POINT...${NC}"
-if mountpoint -q "$MOUNT_POINT"; then
-    echo -e "${GREEN}✓ Already mounted${NC}"
+print_step "Mounting RAID to $NEXUS_RAID_MOUNT"
+if mountpoint -q "$NEXUS_RAID_MOUNT"; then
+    print_success "Already mounted"
 else
-    mount "$RAID_DEVICE" "$MOUNT_POINT"
-    echo -e "${GREEN}✓ Mounted successfully${NC}"
+    mount "$NEXUS_RAID_DEVICE" "$NEXUS_RAID_MOUNT"
+    print_success "Mounted successfully"
 fi
 
-echo
-
 # Display final status
-echo -e "${YELLOW}RAID Status:${NC}"
-mdadm --detail "$RAID_DEVICE" | grep -E "State|Raid Level|Array Size|Active Devices"
+print_step "RAID Status"
+mdadm --detail "$NEXUS_RAID_DEVICE" | grep -E "State|Raid Level|Array Size|Active Devices"
 
-echo
-
-echo -e "${GREEN}✓ RAID array ready for use at $MOUNT_POINT${NC}"
+print_success "RAID array ready for use at $NEXUS_RAID_MOUNT"

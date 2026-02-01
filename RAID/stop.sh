@@ -1,60 +1,46 @@
 #!/bin/bash
-# RAID Reassembly Script (UUID-based)
 
-set -euo pipefail
+source "/etc/nexus/conf/conf.sh"
+source "${NEXUS_OPT_DIR}/lib/checks.sh"
+source "${NEXUS_OPT_DIR}/lib/print.sh"
+source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-BASE_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)
-RAID_CONFIG="${BASE_DIR}/keys/RAID.sh"
-
-# Ensure config exists
-if [[ ! -f "$RAID_CONFIG" ]]; then
-    echo -e "${RED}RAID config not found: $RAID_CONFIG${NC}"
-    exit 1
-fi
-
-source "$RAID_CONFIG"
+print_header "STOPPING RAID ARRAY"
 
 # Must be root
 if [[ $EUID -ne 0 ]]; then
-    echo -e "${RED}This script must be run as root${NC}"
+    print_error "This script must be run as root"
     exit 1
 fi
 
-echo -e "${YELLOW}========================================${NC}"
-echo -e "${YELLOW}      Stop RAID Array                   ${NC}"
-echo -e "${YELLOW}========================================${NC}"
-echo
+# Ensure RAID device is configured
+if [[ -z "${NEXUS_RAID_DEVICE}" ]]; then
+    print_error "RAID device not configured in /etc/nexus/conf/conf.sh"
+    exit 1
+fi
 
 # Unmount if mounted
-if mountpoint -q "$MOUNT_POINT"; then
-    echo -e "${YELLOW}Unmounting $MOUNT_POINT...${NC}"
-    
+print_step "Checking mount status"
+if mountpoint -q "$NEXUS_RAID_MOUNT"; then
+    print_step "Unmounting $NEXUS_RAID_MOUNT"
+
     # Sync filesystem before unmounting
     sync
-    
-    umount "$MOUNT_POINT"
-    echo -e "${GREEN}✓ Unmounted${NC}"
-else
-    echo -e "${GREEN}✓ Not mounted${NC}"
-fi
 
-echo
+    umount "$NEXUS_RAID_MOUNT"
+    print_success "Unmounted"
+else
+    print_success "Not mounted"
+fi
 
 # Stop RAID array if active
-if grep -q ${REL_RAID_DEVICE} /proc/mdstat; then
-    echo -e "${YELLOW}Stopping RAID array...${NC}"
-    mdadm --stop "$RAID_DEVICE"
-    echo -e "${GREEN}✓ Stopped${NC}"
+print_step "Checking RAID array status"
+if grep -q ${NEXUS_REL_RAID_DEVICE} /proc/mdstat; then
+    print_step "Stopping RAID array"
+    mdadm --stop "$NEXUS_RAID_DEVICE"
+    print_success "Stopped"
 else
-    echo -e "${GREEN}✓ RAID array not active${NC}"
+    print_success "RAID array not active"
 fi
 
-echo
-
-echo -e "${GREEN}✓ RAID safely stopped. Safe to disconnect.${NC}"
+print_success "RAID safely stopped - Safe to disconnect drives"

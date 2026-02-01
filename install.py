@@ -160,6 +160,12 @@ def copy_repo_path(repo_path):
         # Vaultwarden files
         ("vault/setup.sh", "vault/setup.sh"),
 
+        # RAID files
+        ("RAID/setup.sh", "RAID/setup.sh"),
+        ("RAID/start.sh", "RAID/start.sh"),
+        ("RAID/stop.sh", "RAID/stop.sh"),
+        ("RAID/status.sh", "RAID/status.sh"),
+
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
         ("lib/print.sh", "lib/print.sh"),
@@ -264,12 +270,21 @@ def create_config():
         print_error("RAID mount path cannot be empty")
         sys.exit(1)
 
+    # Get RAID device from user
+    raid_device = input(f"{Colors.CYAN}Enter your RAID device (e.g., /dev/md0) [default: /dev/md0]: {Colors.RESET}").strip()
+    if not raid_device:
+        raid_device = "/dev/md0"
+
+    # Extract relative device name (e.g., md0 from /dev/md0)
+    raid_rel_device = raid_device.split('/')[-1]
+
     # Create config directory
     config_dir = Path("/etc/nexus/conf")
     config_dir.mkdir(parents=True, exist_ok=True)
 
     # Create config file content
-    config_content = f"""
+    config_content = f"""#!/bin/bash
+# Nexus Configuration File - /etc/nexus/conf/conf.sh
 
 # Nexus domain and subdomains
 export NEXUS_DOMAIN="{domain}"
@@ -289,7 +304,9 @@ export NEXUS_LOG_DIR="/var/log/nexus"
 export NEXUS_OPT_DIR="/opt/nexus"
 export NEXUS_ETC_DIR="/etc/nexus"
 
-# RAID mount path
+# RAID configuration
+export NEXUS_RAID_DEVICE="{raid_device}"
+export NEXUS_REL_RAID_DEVICE="{raid_rel_device}"
 export NEXUS_RAID_MOUNT="{raid_mount}"
 """
 
