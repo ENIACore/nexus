@@ -17,14 +17,14 @@ mkdir -p "${NEXUS_VAULT_DATA_DIR}"
 # Ensure docker network exists
 if ! docker network inspect nexus >/dev/null 2>&1; then
     print_step "Creating Docker network 'nexus'"
-    docker network create --driver bridge --subnet 172.18.0.0/16 nexus >/dev/null
+    docker network create --driver bridge --subnet 172.18.0.0/16 nexus-net >/dev/null
 fi
 
 # Run Vaultwarden container
 print_step "Starting Vaultwarden container"
 docker run -d \
     --name vaultwarden \
-    --network nexus \
+    --network nexus-net \
     --env DOMAIN="https://${NEXUS_VAULT_SUBDOMAIN}" \
     --volume "${NEXUS_VAULT_DATA_DIR}:/data/" \
     --restart unless-stopped \
