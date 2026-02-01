@@ -30,3 +30,5 @@ fi
 # Show UFW status
 print_step "Current UFW status"
 sudo ufw status verbose
+sudo iptables -L INPUT -n -v | head -20
+sudo ipset list ipsum | head -20
