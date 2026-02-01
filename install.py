@@ -170,6 +170,15 @@ def copy_repo_path(repo_path):
         ("lib/checks.sh", "lib/checks.sh"),
         ("lib/print.sh", "lib/print.sh"),
         ("lib/log.sh", "lib/log.sh"),
+
+        # Generic script files for user
+        ("bin/get_ipv4.sh", "bin/get_ipv4.sh"),
+        ("bin/port_scanner.sh", "bin/port_scanner.sh"),
+        ("bin/mask_sleep.sh", "bin/mask_sleep.sh"),
+        ("bin/unmask_sleep.sh", "bin/unmask_sleep.sh"),
+        ("bin/inspect_docker_network.sh", "bin/inspect_docker_network.sh"),
+        ("bin/prune_docker_system.sh", "bin/prune_docker_system.sh"),
+        ("bin/rm_docker_volumes.sh", "bin/rm_docker_volumes.sh"),
     ]
 
     for src_rel, dst_rel in paths_to_copy:
