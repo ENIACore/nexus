@@ -18,6 +18,10 @@ NEXUS_CF_LOG_FILE="${NEXUS_CF_LOG_DIR}/dns.log"
 NEXUS_CF_LOG_MAX_LINES=100
 init_logger "${NEXUS_CF_LOG_FILE}" "${NEXUS_CF_LOG_MAX_LINES}"
 
+# Set ownership to nexus user so cron job can write logs - It will be set to root now
+sudo chown -R ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
+sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
+
 # Get public IPV4 address
 log "Detecting public IPv4 address..."
 PUBLIC_IPV4=$(curl -s4 https://api.ipify.org || curl -s4 https://icanhazip.com || curl -s4 https://ifconfig.me)

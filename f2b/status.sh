@@ -4,7 +4,7 @@ source "${NEXUS_OPT_DIR}/lib/print.sh"
 
 print_header "FAIL2BAN NGINX JAIL STATUS"
 
-JAILS=("nginx-http-auth" "nginx-bad-request" "nginx-botsearch" "nginx-limit-req")
+JAILS=("nginx-http-auth" "nginx-bad-request" "nginx-botsearch" "nginx-limit-req sshd")
 
 for jail in "${JAILS[@]}"; do
     print_step "${jail}"

@@ -52,12 +52,12 @@ logpath = /var/log/nexus/nginx/*.log
 [nginx-botsearch]
 enabled = true
 backend = auto
-logpath = /var/log/nexus/nginx/access.log
+logpath = /var/log/nexus/nginx/*.log
 
 [nginx-limit-req]
 enabled = true
 backend = auto
-logpath = /var/log/nexus/nginx/error.log
+logpath = /var/log/nexus/nginx/*.log
 EOF
 
 # Copying latest jail.local file to fail2ban config directory

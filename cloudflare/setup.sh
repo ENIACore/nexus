@@ -17,9 +17,6 @@ require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file cont
 # Ensure nexus user exists
 ensure_nexus_user
 
-# Set ownership to nexus user so cron job can write logs
-sudo chown ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
-sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
 
 print_info "Log directory created successfully"
 print_step "Logs will be written to: ${NEXUS_CF_LOG_FILE}"
@@ -41,5 +38,9 @@ if [[ $? -ne 0 ]]; then
     print_error "ERROR: Failed to schedule DNS updates"
     exit 1
 fi
+
+# Set ownership to nexus user so cron job can write logs - It will be set to root now
+sudo chown -R ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
+sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
 
 echo "Cloudflare setup complete"
