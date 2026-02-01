@@ -313,6 +313,7 @@ export NEXUS_RAID_MOUNT="{raid_mount}"
     # Write config file
     config_file = config_dir / "conf.sh"
     config_file.write_text(config_content)
+    config_file.chmod(0o755)
 
     print_success(f"Configuration file created at {config_file}")
     print_info(f"Root domain: {domain}")
