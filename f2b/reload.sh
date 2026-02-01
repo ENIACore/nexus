@@ -24,7 +24,19 @@ sudo systemctl restart fail2ban
 
 if [ $? -eq 0 ]; then
     print_success "fail2ban reloaded successfully"
-    sudo fail2ban-client status
+    
+    # Wait for fail2ban to be fully ready
+    print_step "Waiting for fail2ban to be ready"
+    for i in {1..10}; do
+        if sudo fail2ban-client ping &>/dev/null; then
+            sudo fail2ban-client status
+            exit 0
+        fi
+        sleep 1
+    done
+    
+    print_error "fail2ban started but socket not ready after 10 seconds"
+    exit 1
 else
     print_error "Failed to reload fail2ban"
     exit 1
