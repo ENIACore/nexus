@@ -291,9 +291,9 @@ if __name__ == "__main__":
     
     create_directories()
     repo_path = clone_repository()
-    copy_repo_path(repo_path)
-    copy_template_files(repo_path)
-    create_config()
-    cleanup_temp_files()
+    #copy_repo_path(repo_path)
+    #copy_template_files(repo_path)
+    #create_config()
+    #cleanup_temp_files()
 
     print_success("Initial setup complete!")
