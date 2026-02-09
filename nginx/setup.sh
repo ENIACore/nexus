@@ -7,6 +7,7 @@ source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_NGINX_ETC_DIR="/etc/nexus/nginx"
 NEXUS_NGINX_OPT_DIR="/opt/nexus/nginx"
+NEXUS_NGINX_VAR_DIR="/var/www/nexus"
 
 print_header "CREATING NEXUS REVERSE PROXY"
 
@@ -67,6 +68,7 @@ docker run -d \
     -v "${NEXUS_NGINX_ETC_DIR}/sites-enabled:/etc/nginx/sites-enabled:ro" \
     -v "/etc/letsencrypt:/etc/letsencrypt:ro" \
     -v "${NEXUS_NGINX_LOG_DIR}:/var/log/nginx:rw" \
+    -v "${NEXUS_NGINX_VAR_DIR}:/var/www:ro" \
     --tmpfs /var/cache/nginx:rw,noexec,nosuid,size=100m \
     --tmpfs /var/run:rw,noexec,nosuid,size=10m \
     --health-cmd="nginx -t" \
