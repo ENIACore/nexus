@@ -33,7 +33,7 @@ print_step "Starting PostgreSQL container..."
 sudo docker run --name nexus-pg \
   --network nexus-net \
   -e POSTGRES_PASSWORD="${NEXUS_PG_PASSWORD}" \
-  -v nexus-pg-data:/var/lib/postgresql/data \
+  -v nexus-pg-data:/var/lib/postgresql \
   -d postgres:latest
 
 if [[ $? -ne 0 ]]; then
