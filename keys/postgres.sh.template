@@ -1,0 +1,5 @@
+# Postgres db password
+export NEXUS_PG_PASSWORD="<value>"
+
+# Postgres db connection string
+export NEXUS_PG_CONN_STR="postgresql://postgres:${NEXUS_PG_PASSWORD}@nexus-pg:5432/postgres"

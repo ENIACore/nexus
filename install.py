@@ -171,6 +171,9 @@ def copy_repo_path(repo_path):
         ("lib/print.sh", "lib/print.sh"),
         ("lib/log.sh", "lib/log.sh"),
 
+        # Nexus db setup
+        ("db/postgres_setup.sh", "db/postgres_setup.sh"),
+
         # Generic script files for user
         ("bin/get_ipv4.sh", "bin/get_ipv4.sh"),
         ("bin/port_scanner.sh", "bin/port_scanner.sh"),
