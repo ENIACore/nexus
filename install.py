@@ -174,6 +174,9 @@ def copy_repo_path(repo_path):
         # Nexus db setup
         ("db/postgres_setup.sh", "db/postgres_setup.sh"),
 
+        # Personal site setup
+        ("sites/personal_site_setup.sh", "sites/personal_site_setup.sh"),
+
         # Generic script files for user
         ("bin/get_ipv4.sh", "bin/get_ipv4.sh"),
         ("bin/port_scanner.sh", "bin/port_scanner.sh"),

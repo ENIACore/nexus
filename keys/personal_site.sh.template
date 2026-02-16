@@ -1,0 +1,2 @@
+# Payload secret
+export NEXUS_PERSONAL_SITE_SECRET="<value>"
