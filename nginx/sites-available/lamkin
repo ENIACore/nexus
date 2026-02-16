@@ -4,6 +4,8 @@ server {
     http2 on;
     server_name lamkin.dev www.lamkin.dev;
 
+    client_max_body_size 50M;
+
     include /etc/nginx/snippets/lamkin-ssl-params.conf;
     include /etc/nginx/snippets/security.conf;
     include /etc/nginx/snippets/block-exploits.conf;
