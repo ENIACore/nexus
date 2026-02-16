@@ -3,50 +3,22 @@ server {
     listen [::]:443 ssl;
     http2 on;
     server_name lamkin.dev www.lamkin.dev;
-    
-    root /var/www/www-nexus;
-    index index.html;
-    
+
     include /etc/nginx/snippets/lamkin-ssl-params.conf;
     include /etc/nginx/snippets/security.conf;
     include /etc/nginx/snippets/block-exploits.conf;
-    
+
     # Next.js static assets with aggressive caching
     location /_next/static/ {
+        proxy_pass http://nexus-personal-site:3000;
+        include /etc/nginx/snippets/http-proxy-params.conf;
         expires 1y;
         add_header Cache-Control "public, immutable";
         access_log off;
     }
-    
-    # Other static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|svg|woff|woff2|ttf|eot|css|js)$ {
-        expires 30d;
-        add_header Cache-Control "public, max-age=2592000";
-        access_log off;
-    }
-    
-    # HTML files - no caching
-    location ~* \.html$ {
-        expires -1;
-        add_header Cache-Control "no-store, no-cache, must-revalidate";
-    }
-    
-    # Main location block
-    location / {
-        try_files $uri $uri.html $uri/ =404;
-    }
-    
-    # Custom 404
-    error_page 404 /404.html;
-    location = /404.html {
-        internal;
-    }
-}
 
-# HTTP redirect
-server {
-    listen 80;
-    listen [::]:80;
-    server_name lamkin.dev www.lamkin.dev;
-    return 301 https://lamkin.dev$request_uri;
+    location / {
+        proxy_pass http://nexus-personal-site:3000;
+        include /etc/nginx/snippets/http-proxy-params.conf;
+    }
 }
