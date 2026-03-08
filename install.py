@@ -165,6 +165,7 @@ def copy_repo_path(repo_path):
         ("RAID/start.sh", "RAID/start.sh"),
         ("RAID/stop.sh", "RAID/stop.sh"),
         ("RAID/status.sh", "RAID/status.sh"),
+        ("RAID/restart.sh", "RAID/restart.sh"),
 
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
