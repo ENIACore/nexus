@@ -56,6 +56,7 @@ docker run -d \
     -e TZ="America/Chicago" \
     -e ENABLE_RCON="true" \
     -e RCON_PASSWORD="$(openssl rand -hex 16)" \
+    -e SERVER_PORT="25565" \
     -v "${NEXUS_MC_DATA_PATH}":/data \
     itzg/minecraft-server:latest
 
