@@ -84,4 +84,26 @@ else
     exit 1
 fi
 
+# Update mc A record to new IP address (DNS only - not proxied for Minecraft SRV)
+log "Retrieving DNS record ID for mc.${NEXUS_DOMAIN}..."
+MC_RECORD_ID=$(curl -s -X GET "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records?name=mc.${NEXUS_DOMAIN}&type=A" -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" | jq -r '.result[0].id')
+
+if [[ -z "$MC_RECORD_ID" || "$MC_RECORD_ID" == "null" ]]; then
+    log "WARNING: Could not get Record ID for mc.${NEXUS_DOMAIN} (skipping)"
+else
+    log "Updating A record for mc.${NEXUS_DOMAIN} -> ${PUBLIC_IPV4}"
+    MC_RECORD_RESPONSE=$(curl -s -X PUT "https://api.cloudflare.com/client/v4/zones/${ZONE_ID}/dns_records/${MC_RECORD_ID}" \
+        -H "Authorization: Bearer ${NEXUS_CF_API_KEY}" \
+        -H "Content-Type: application/json" \
+        --data "{\"type\":\"A\",\"name\":\"mc.${NEXUS_DOMAIN}\",\"content\":\"${PUBLIC_IPV4}\",\"ttl\":1,\"proxied\":false}")
+
+    SUCCESS=$(echo "${MC_RECORD_RESPONSE}" | jq -r '.success')
+    if [[ "${SUCCESS}" == "true" ]]; then
+        log "SUCCESS: Updated mc.${NEXUS_DOMAIN} to ${PUBLIC_IPV4}"
+    else
+        log "ERROR: Failed to update mc.${NEXUS_DOMAIN}"
+        log "Response: ${MC_RECORD_RESPONSE}"
+    fi
+fi
+
 log "DNS Update Complete"
