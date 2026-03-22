@@ -67,7 +67,7 @@ if [ $? -eq 0 ]; then
     print_info "Next steps:"
     print_info "1. Connect via Minecraft client at <server-ip>:25565"
     print_info "2. Set your username in MC_OPS and re-run to grant operator"
-    print_info "3. Monitor startup progress: docker logs -f minecraft"
+    print_info "3. Monitor startup progress: docker logs -f nexus-mc"
     print_info "4. World data stored in ${NEXUS_MC_DATA_PATH}"
 else
     print_error "Failed to start Minecraft server container"
