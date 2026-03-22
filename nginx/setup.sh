@@ -65,6 +65,7 @@ docker run -d \
     --ip 172.18.0.254 \
     -p 80:80 \
     -p 443:443 \
+    -p 25565:25565 \
     --read-only \
     -v "${NEXUS_NGINX_ETC_DIR}/conf/nginx.conf:/etc/nginx/nginx.conf:ro" \
     -v "${NEXUS_NGINX_ETC_DIR}/conf.d:/etc/nginx/conf.d:ro" \
