@@ -34,6 +34,7 @@ print_step "Allowing SSH, HTTP, and HTTPS"
 sudo ufw allow 22/tcp comment "OpenSSH"
 sudo ufw allow 80/tcp comment "HTTP"
 sudo ufw allow 443/tcp comment "HTTPS"
+sudo ufw allow 25565/tcp comment "Minecraft"
 
 # Download and setup blocklist script
 print_step "Setting up IP blocklist updater"
