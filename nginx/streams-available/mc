@@ -1,0 +1,4 @@
+server {
+    listen 25565;
+    proxy_pass nexus-mc:25565;
+}

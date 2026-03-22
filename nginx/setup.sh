@@ -39,6 +39,10 @@ cp -r "${NEXUS_NGINX_OPT_DIR}/snippets" "${NEXUS_NGINX_ETC_DIR}/"
 print_step "Creating sites-enabled directory at ${NEXUS_NGINX_ETC_DIR}/sites-enabled"
 mkdir -p "${NEXUS_NGINX_ETC_DIR}/sites-enabled"
 
+# Create streams-enabled directory
+print_step "Creating streams-enabled directory at ${NEXUS_NGINX_ETC_DIR}/streams-enabled"
+mkdir -p "${NEXUS_NGINX_ETC_DIR}/streams-enabled"
+
 NEXUS_NGINX_LOG_DIR="${NEXUS_LOG_DIR}/nginx"
 print_step "Creating container log dir at ${NEXUS_NGINX_LOG_DIR}"
 mkdir -p "${NEXUS_NGINX_LOG_DIR}"
@@ -66,6 +70,7 @@ docker run -d \
     -v "${NEXUS_NGINX_ETC_DIR}/conf.d:/etc/nginx/conf.d:ro" \
     -v "${NEXUS_NGINX_ETC_DIR}/snippets:/etc/nginx/snippets:ro" \
     -v "${NEXUS_NGINX_ETC_DIR}/sites-enabled:/etc/nginx/sites-enabled:ro" \
+    -v "${NEXUS_NGINX_ETC_DIR}/streams-enabled:/etc/nginx/streams-enabled:ro" \
     -v "/etc/letsencrypt:/etc/letsencrypt:ro" \
     -v "${NEXUS_NGINX_LOG_DIR}:/var/log/nginx:rw" \
     -v "${NEXUS_NGINX_VAR_DIR}:/var/www:ro" \

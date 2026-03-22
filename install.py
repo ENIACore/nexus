@@ -137,6 +137,7 @@ def copy_repo_path(repo_path):
         ("nginx/conf.d", "nginx/conf.d"),
         ("nginx/snippets", "nginx/snippets"),
         ("nginx/sites-available", "nginx/sites-available"),
+        ("nginx/streams-available", "nginx/streams-available"),
 
         # Fail2ban files
         ("f2b/setup.sh", "f2b/setup.sh"),
@@ -186,6 +187,9 @@ def copy_repo_path(repo_path):
         ("bin/inspect_docker_network.sh", "bin/inspect_docker_network.sh"),
         ("bin/prune_docker_system.sh", "bin/prune_docker_system.sh"),
         ("bin/rm_docker_volumes.sh", "bin/rm_docker_volumes.sh"),
+
+        # Minecraft setup
+        ("mc/setup.sh", "mc/setup.sh"),
     ]
 
     for src_rel, dst_rel in paths_to_copy:
