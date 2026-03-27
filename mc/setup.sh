@@ -8,7 +8,7 @@ NEXUS_MC_PATH="${NEXUS_RAID_MOUNT}/mc-data"
 NEXUS_MC_DATA_PATH="${NEXUS_MC_PATH}/data"
 
 # Server settings
-MC_TYPE="PAPER"
+MC_TYPE="FABRIC"
 MC_VERSION="LATEST"
 MC_MEMORY="3G"
 MC_DIFFICULTY="normal"
@@ -18,12 +18,15 @@ MC_OPS="PWRWHL"
 MC_WHITELIST="PWRWHL,sulalus"
 MC_ENFORCE_WHITELIST="TRUE"
 
-print_header "SETTING UP MINECRAFT SERVER (PAPER)"
+# Mods (auto-downloaded from Modrinth)
+MC_MODRINTH_PROJECTS="lithium"
+
+print_header "SETTING UP MINECRAFT SERVER (FABRIC + LITHIUM)"
+
 # Ensure RAID mount exists
-
 require_dir "${NEXUS_RAID_MOUNT}" "RAID mount point"
-# Create Minecraft directories
 
+# Create Minecraft directories
 print_step "Creating Minecraft server directories"
 mkdir -p "${NEXUS_MC_DATA_PATH}"
 
@@ -67,9 +70,11 @@ docker run -d \
     -e ENABLE_RCON="true" \
     -e RCON_PASSWORD="${MC_RCON_PASSWORD}" \
     -e SERVER_PORT="25565" \
+    -e MODRINTH_PROJECTS="${MC_MODRINTH_PROJECTS}" \
     -v "${NEXUS_MC_DATA_PATH}":/data \
     itzg/minecraft-server:latest
 #    -p 25565:25565 \ Now managed by nginx stream
+
 if [ $? -eq 0 ]; then
     print_success "Minecraft server container started successfully"
     print_info ""
