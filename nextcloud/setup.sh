@@ -41,7 +41,7 @@ docker run -d \
     --restart always \
     --env APACHE_PORT=11000 \
     --env APACHE_IP_BINDING=0.0.0.0 \
-    --env APACHE_ADDITIONAL_NETWORK="nexus" \
+    --env APACHE_ADDITIONAL_NETWORK="nexus-net" \
     --env SKIP_DOMAIN_VALIDATION=true \
     --env NEXTCLOUD_DATADIR="${NEXUS_NEXTCLOUD_DATA_DIR}" \
     --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
