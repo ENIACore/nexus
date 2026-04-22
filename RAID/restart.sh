@@ -51,3 +51,4 @@ print_step "Starting services running at mount point (dependent on specific serv
 docker start jellyfin
 docker start nexus-mc
 docker start qbittorrent
+docker restart nexus-proxy
