@@ -12,6 +12,11 @@ if [[ $EUID -ne 0 ]]; then
     exit 1
 fi
 
+print_step "Stopping services running at mount point (dependent on specific server setup - default is mc, qbit, and jellyfin)"
+docker stop jellyfin
+docker stop nexus-mc
+docker stop qbittorrent
+
 # Stop the array
 print_step "Stopping RAID array"
 "${NEXUS_OPT_DIR}/RAID/stop.sh"
@@ -40,3 +45,9 @@ fi
 
 # Show status
 "${NEXUS_OPT_DIR}/RAID/status.sh"
+
+
+print_step "Starting services running at mount point (dependent on specific server setup - default is mc, qbit, and jellyfin)"
+docker start jellyfin
+docker start nexus-mc
+docker start qbittorrent
