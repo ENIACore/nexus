@@ -39,3 +39,18 @@ print_header() {
     printf "${MAGENTA}${BOLD}%*s${RESET}\n" $(((${#1}+60)/2)) "$1"
     echo -e "${MAGENTA}${BOLD}${line}${RESET}\n"
 }
+
+# Prompt user for input with optional default value
+# Usage: prompt_input "Enter something" [default_value]
+# Result stored in $REPLY
+prompt_input() {
+    local prompt="$1"
+    local default="$2"
+
+    if [[ -n "$default" ]]; then
+        read -e -p "$(echo -e "${CYAN}${BOLD}[INPUT]${RESET} ${CYAN}${prompt}${RESET} [${default}]: ")" REPLY
+        REPLY="${REPLY:-$default}"
+    else
+        read -e -p "$(echo -e "${CYAN}${BOLD}[INPUT]${RESET} ${CYAN}${prompt}${RESET}: ")" REPLY
+    fi
+}
