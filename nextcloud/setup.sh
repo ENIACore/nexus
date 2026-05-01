@@ -49,7 +49,7 @@ docker run -d \
     --env NEXTCLOUD_DATADIR="${NEXUS_NEXTCLOUD_DATA_DIR}" \
     --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
     --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-    ghcr.io/nextcloud-releases/all-in-one:beta
+    ghcr.io/nextcloud-releases/all-in-one:latest
 
 if [ $? -eq 0 ]; then
     print_success "Nextcloud AIO master container started successfully"
