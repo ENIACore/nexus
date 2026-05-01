@@ -161,12 +161,12 @@ def copy_repo_path(repo_path):
         # Vaultwarden files
         ("vault/setup.sh", "vault/setup.sh"),
 
-        # RAID files
-        ("RAID/setup.sh", "RAID/setup.sh"),
-        ("RAID/start.sh", "RAID/start.sh"),
-        ("RAID/stop.sh", "RAID/stop.sh"),
-        ("RAID/status.sh", "RAID/status.sh"),
-        ("RAID/restart.sh", "RAID/restart.sh"),
+        # RAID files - Removed RAID support
+        #("RAID/setup.sh", "RAID/setup.sh"),
+        #("RAID/start.sh", "RAID/start.sh"),
+        #("RAID/stop.sh", "RAID/stop.sh"),
+        #("RAID/status.sh", "RAID/status.sh"),
+        #("RAID/restart.sh", "RAID/restart.sh"),
 
         # Central script files
         ("lib/checks.sh", "lib/checks.sh"),
@@ -283,20 +283,23 @@ def create_config():
         print_error("Domain cannot be empty")
         sys.exit(1)
 
-    # Get RAID mount path from user
-    raid_mount = input(f"{Colors.CYAN}Enter your RAID mount path (e.g., /mnt/RAID): {Colors.RESET}").strip()
-
-    if not raid_mount:
-        print_error("RAID mount path cannot be empty")
+    # Get path for essential services (vaultwarden, backups etc) 
+    essential_services_path = input(f"{Colors.CYAN}Enter the path for all essential services (e.g., /mnt/essential): {Colors.RESET}").strip()
+    if not essential_services_path:
+        print_error("core services path cannot be empty")
         sys.exit(1)
 
-    # Get RAID device from user
-    raid_device = input(f"{Colors.CYAN}Enter your RAID device (e.g., /dev/md0) [default: /dev/md0]: {Colors.RESET}").strip()
-    if not raid_device:
-        raid_device = "/dev/md0"
+    # Get path for core services (nextcloud, minecraft, etc) 
+    core_services_path = input(f"{Colors.CYAN}Enter the path for all core services (e.g., /mnt/core): {Colors.RESET}").strip()
+    if not core_services_path:
+        print_error("core services path cannot be empty")
+        sys.exit(1)
 
-    # Extract relative device name (e.g., md0 from /dev/md0)
-    raid_rel_device = raid_device.split('/')[-1]
+    # Get path for media services (qbittorrent, jellyfin)
+    media_services_path = input(f"{Colors.CYAN}Enter the path for all media services (e.g., /mnt/media): {Colors.RESET}").strip()
+    if not media_services_path:
+        print_error("media services path cannot be empty")
+        sys.exit(1)
 
     # Create config directory
     config_dir = Path("/etc/nexus/conf")
@@ -324,10 +327,9 @@ export NEXUS_LOG_DIR="/var/log/nexus"
 export NEXUS_OPT_DIR="/opt/nexus"
 export NEXUS_ETC_DIR="/etc/nexus"
 
-# RAID configuration
-export NEXUS_RAID_DEVICE="{raid_device}"
-export NEXUS_REL_RAID_DEVICE="{raid_rel_device}"
-export NEXUS_RAID_MOUNT="{raid_mount}"
+export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
+export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
+export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
 """
 
     # Write config file
@@ -337,7 +339,9 @@ export NEXUS_RAID_MOUNT="{raid_mount}"
 
     print_success(f"Configuration file created at {config_file}")
     print_info(f"Root domain: {domain}")
-    print_info(f"RAID mount path: {raid_mount}")
+    print_info(f"Essential services path: {essential_services_path}")
+    print_info(f"Core services path: {core_services_path}")
+    print_info(f"Media services path: {media_services_path}")
 
 
 if __name__ == "__main__":
