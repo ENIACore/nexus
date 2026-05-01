@@ -1,10 +1,12 @@
 #!/bin/bash
+
 source "/etc/nexus/conf/conf.sh"
 source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
+
 NEXUS_MC_OPT_DIR="${NEXUS_OPT_DIR}/mc"
-NEXUS_MC_PATH="${NEXUS_RAID_MOUNT}/mc-data"
+NEXUS_MC_PATH="${NEXUS_CORE_SERVICES_PATH}/mc-data"
 NEXUS_MC_DATA_PATH="${NEXUS_MC_PATH}/data"
 
 # Server settings
@@ -23,8 +25,8 @@ MC_MODRINTH_PROJECTS="lithium"
 
 print_header "SETTING UP MINECRAFT SERVER (FABRIC + LITHIUM)"
 
-# Ensure RAID mount exists
-require_dir "${NEXUS_RAID_MOUNT}" "RAID mount point"
+# Ensure core services path exists
+require_dir "${NEXUS_CORE_SERVICES_PATH}" "Core services path"
 
 # Create Minecraft directories
 print_step "Creating Minecraft server directories"
