@@ -6,14 +6,14 @@ source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_JELLY_OPT_DIR="${NEXUS_OPT_DIR}/jelly"
-JELLY_CONFIG_DIR="${NEXUS_RAID_MOUNT}/jelly/config"
-JELLY_CACHE_DIR="${NEXUS_RAID_MOUNT}/jelly/cache"
-JELLY_MEDIA_DIR="${NEXUS_RAID_MOUNT}/jelly/media"
+JELLY_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/config"
+JELLY_CACHE_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/cache"
+JELLY_MEDIA_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/media"
 
 print_header "SETTING UP JELLYFIN MEDIA SERVER"
 
 # Ensure RAID mount exists
-require_dir "${NEXUS_RAID_MOUNT}" "RAID mount point"
+require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 
 # Create jellyfin directories
 print_step "Creating Jellyfin directories"
