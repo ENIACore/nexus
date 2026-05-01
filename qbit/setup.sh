@@ -6,10 +6,10 @@ source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_QBIT_OPT_DIR="${NEXUS_OPT_DIR}/qbit"
-NEXUS_QBIT_PATH="${NEXUS_RAID_MOUNT}/qbit-data"
-NEXUS_QBIT_CONFIG_PATH="${NEXUS_QBIT_PATH}/config"
-NEXUS_QBIT_DATA_PATH="${NEXUS_QBIT_PATH}/data"
-NEXUS_QBIT_WG_DIR="${NEXUS_QBIT_CONFIG_PATH}/wireguard"
+NEXUS_QBIT_PATH="${NEXUS_MEDIA_SERVICES_PATH}/qbit-data"
+NEXUS_QBIT_CONFIG_PATH="${NEXUS_QBIT_PATH}"
+#NEXUS_QBIT_DATA_PATH="${NEXUS_QBIT_PATH}/data"
+NEXUS_QBIT_WG_DIR="${NEXUS_QBIT_PATH}/wireguard"
 NEXUS_QBIT_WG_TARGET="${NEXUS_QBIT_WG_DIR}/wg0.conf"
 
 # WireGuard config file
@@ -23,8 +23,8 @@ print_header "SETTING UP QBITTORRENT WITH WIREGUARD VPN"
 # Ensure WireGuard config exists
 require_file "${NEXUS_WG_CONF}" "WireGuard config file (wg0.conf)"
 
-# Ensure RAID mount exists
-require_dir "${NEXUS_RAID_MOUNT}" "RAID mount point"
+# Ensure media services path exists
+require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 
 # Create qBittorrent directories
 print_step "Creating qBittorrent directories"
@@ -71,8 +71,9 @@ docker run -d \
     -e UNBOUND_ENABLED="false" \
     -e VPN_LAN_NETWORK="${VPN_LAN_CIDR}" \
     -v "${NEXUS_QBIT_CONFIG_PATH}":/config \
-    -v "${NEXUS_QBIT_DATA_PATH}":/data \
     ghcr.io/hotio/qbittorrent:latest
+
+#-v "${NEXUS_QBIT_DATA_PATH}":/data \
 
 if [ $? -eq 0 ]; then
     print_success "qBittorrent container started successfully"
@@ -80,9 +81,8 @@ if [ $? -eq 0 ]; then
     print_info "Next steps:"
     print_info "1. Access qBittorrent WebUI at ${NEXUS_QBIT_SUBDOMAIN} if configured"
     print_info "2. Validate VPN connection via docker logs"
-    print_info "3. Downloads will be stored in ${NEXUS_QBIT_DATA_PATH}"
+    #print_info "3. Downloads will be stored in ${NEXUS_QBIT_DATA_PATH}"
 else
     print_error "Failed to start qBittorrent container"
     exit 1
 fi
-

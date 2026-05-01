@@ -12,7 +12,7 @@ JELLY_MEDIA_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/media"
 
 print_header "SETTING UP JELLYFIN MEDIA SERVER"
 
-# Ensure RAID mount exists
+# Ensure media services path exists
 require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 
 # Create jellyfin directories
