@@ -6,9 +6,12 @@ source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_VAULT_OPT_DIR="${NEXUS_OPT_DIR}/vault"
-NEXUS_VAULT_DATA_DIR="/mnt/vw-data"
+NEXUS_VAULT_DATA_DIR="${NEXUS_ESSENTIAL_SERVICES_PATH}/vw-data"
 
 print_header "SETTING UP VAULTWARDEN PASSWORD MANAGER"
+
+# Ensure essential services path exists
+require_dir "${NEXUS_ESSENTIAL_SERVICES_PATH}" "Essential services path"
 
 # Create vaultwarden data directory
 print_step "Creating Vaultwarden data directory at ${NEXUS_VAULT_DATA_DIR}"
