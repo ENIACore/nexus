@@ -29,7 +29,7 @@ require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 # Create qBittorrent directories
 print_step "Creating qBittorrent directories"
 mkdir -p "${NEXUS_QBIT_WG_DIR}"
-mkdir -p "${NEXUS_QBIT_DATA_PATH}"
+#mkdir -p "${NEXUS_QBIT_DATA_PATH}"
 
 # Copy WireGuard config
 print_step "Copying WireGuard config to qBittorrent config directory"
