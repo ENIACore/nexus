@@ -6,9 +6,12 @@ source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
 NEXUS_NEXTCLOUD_OPT_DIR="${NEXUS_OPT_DIR}/nextcloud"
-NEXUS_NEXTCLOUD_DATA_DIR="/mnt/nextcloud-data"
+NEXUS_NEXTCLOUD_DATA_DIR="${NEXUS_CORE_SERVICES_PATH}/nextcloud-data"
 
 print_header "SETTING UP NEXTCLOUD ALL-IN-ONE"
+
+# Ensure core services path exists
+require_dir "${NEXUS_CORE_SERVICES_PATH}" "Core services path"
 
 # Create nextcloud data directory
 print_step "Creating Nextcloud data directory at ${NEXUS_NEXTCLOUD_DATA_DIR}"
