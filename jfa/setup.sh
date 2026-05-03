@@ -5,23 +5,22 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-NEXUS_JELLY_OPT_DIR="${NEXUS_OPT_DIR}/jelly"
+NEXUS_JFA_OPT_DIR="${NEXUS_OPT_DIR}/jfa"
+JFA_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jfa/config"
 JELLY_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/config"
-JELLY_CACHE_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/cache"
-JELLY_MEDIA_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/media"
 
-print_header "SETTING UP JELLYFIN MEDIA SERVER"
+echo "Jelly config dir is: ${JELLY_CONFIG_DIR}"
 
-# Ensure media services path exists
+print_header "SETTING UP JFA-GO (JELLYFIN ACCOUNT MANAGER)"
+
+# Ensure base path exists
 require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 
-# Create jellyfin directories
-print_step "Creating Jellyfin directories"
-mkdir -p "${JELLY_CONFIG_DIR}"
-mkdir -p "${JELLY_CACHE_DIR}"
-mkdir -p "${JELLY_MEDIA_DIR}"
+# Create JFA directories
+print_step "Creating JFA directories"
+mkdir -p "${JFA_CONFIG_DIR}"
 
-# Ensure docker network exists
+# Ensure docker network exists (reuse same as Jellyfin)
 if ! docker network inspect nexus-net >/dev/null 2>&1; then
     print_step "Creating Docker network 'nexus-net'"
 
@@ -30,31 +29,32 @@ if ! docker network inspect nexus-net >/dev/null 2>&1; then
         --subnet 172.18.0.0/16 \
         --gateway 172.18.0.1 \
         nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
+        print_error "Failed to create Docker network 'nexus-net'"
         exit 1
     fi
 fi
 
-
-# Run Jellyfin container
-print_step "Starting Jellyfin container"
+# Run JFA-Go container
+print_step "Starting JFA-Go container"
 docker run -d \
-    --name jellyfin \
+    --name jfa-go \
     --network nexus-net \
-    --volume "${JELLY_CONFIG_DIR}:/config" \
-    --volume "${JELLY_CACHE_DIR}:/cache" \
-    --mount type=bind,source="${JELLY_MEDIA_DIR}",target=/media \
+    --volume "${JFA_CONFIG_DIR}:/data" \
+    --volume "${JELLY_CONFIG_DIR}:/jf" \
+    --volume /etc/localtime:/etc/localtime:ro \
     --restart=unless-stopped \
-    jellyfin/jellyfin:latest
+    hrfee/jfa-go
+
+#    -p 8056:8056 \
 
 if [ $? -eq 0 ]; then
-    print_success "Jellyfin container started successfully"
+    print_success "JFA-Go container started successfully"
     print_info ""
     print_info "Next steps:"
-    print_info "1. Access Jellyfin at ${NEXUS_JELLY_SUBDOMAIN} if configured"
-    print_info "2. Add media files to ${JELLY_MEDIA_DIR}"
-    print_info "Note: --net=host can be used to enable DLNA (device discovery) if needed"
+    print_info "1. Access JFA-Go at http://localhost:8056"
+    print_info "2. Connect it to your Jellyfin instance (http://jellyfin:8096 on the Docker network)"
+    print_info "3. Configure invite links and user settings"
 else
-    print_error "Failed to start Jellyfin container"
+    print_error "Failed to start JFA-Go container"
     exit 1
 fi
