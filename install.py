@@ -162,6 +162,9 @@ def copy_repo_path(repo_path):
         # qBittorrent files
         ("qbit/setup.sh", "qbit/setup.sh"),
 
+        # Jackett files
+        ("jackett/setup.sh", "jackett/setup.sh"),
+
         # Vaultwarden files
         ("vault/setup.sh", "vault/setup.sh"),
 

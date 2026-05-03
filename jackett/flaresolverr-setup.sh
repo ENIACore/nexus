@@ -5,7 +5,7 @@ source "${NEXUS_OPT_DIR}/lib/checks.sh"
 source "${NEXUS_OPT_DIR}/lib/print.sh"
 source "${NEXUS_OPT_DIR}/lib/log.sh"
 
-NEXUS_FLARESOLVERR_OPT_DIR="${NEXUS_OPT_DIR}/flaresolverr"
+NEXUS_FLARESOLVERR_OPT_DIR="${NEXUS_OPT_DIR}/jackett"
 
 print_header "SETTING UP FLARESOLVERR"
 
