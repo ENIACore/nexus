@@ -1,0 +1,13 @@
+# Media Library Manager tool configuration variables
+export NEXUS_MLM_MOVIE_PATH=<value>
+export NEXUS_MLM_SHOW_PATH=<value>
+export NEXUS_MLM_MANAGER_PATH=<value>
+
+export NEXUS_MLM_TORRENT_PATH=<value>
+export NEXUS_MLM_INCOMPLETE_PATH=<value>
+export NEXUS_MLM_TMDB_API_KEY=<value>
+
+export NEXUS_MLM_OS_API_KEY=<value>
+export NEXUS_MLM_OS_USER_AGENT=<value>
+export NEXUS_MLM_OS_USER=<value>
+export NEXUS_MLM_OS_PASS=<value>

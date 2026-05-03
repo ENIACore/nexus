@@ -151,6 +151,7 @@ def copy_repo_path(repo_path):
 
         # Jellyfin files
         ("jelly/setup.sh", "jelly/setup.sh"),
+        ("jelly/schedule.sh", "jelly/schedule.sh"),
 
         # jfa-go files
         ("jfa/setup.sh", "jfa/setup.sh"),
