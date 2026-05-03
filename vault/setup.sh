@@ -16,17 +16,42 @@ require_dir "${NEXUS_ESSENTIAL_SERVICES_PATH}" "Essential services path"
 print_step "Creating Vaultwarden data directory at ${NEXUS_VAULT_DATA_DIR}"
 mkdir -p "${NEXUS_VAULT_DATA_DIR}"
 
-# Generate admin token
-print_step "Generating Vaultwarden admin token"
-ADMIN_PASSWORD=$(openssl rand -base64 24)
-ADMIN_TOKEN=$(docker run --rm -it vaultwarden/server /vaultwarden hash --preset owasp <<< "${ADMIN_PASSWORD}" | tail -n1)
+# Ensure argon2 is installed
+if ! command -v argon2 >/dev/null 2>&1; then
+    print_step "Installing argon2"
+    if command -v apt-get >/dev/null 2>&1; then
+        apt-get update -qq && apt-get install -y argon2
+    elif command -v dnf >/dev/null 2>&1; then
+        dnf install -y argon2
+    elif command -v yum >/dev/null 2>&1; then
+        yum install -y argon2
+    elif command -v pacman >/dev/null 2>&1; then
+        pacman -S --noconfirm argon2
+    else
+        print_error "No supported package manager found to install argon2"
+        exit 1
+    fi
+
+    if ! command -v argon2 >/dev/null 2>&1; then
+        print_error "argon2 installation failed"
+        exit 1
+    fi
+fi
+
+# Generate admin password (this is what you'll type at the login prompt)
+print_step "Generating Vaultwarden admin password"
+ADMIN_PASSWORD=$(openssl rand -base64 48)
+
+# Generate argon2id PHC hash of the password (Bitwarden defaults: m=64MiB, t=3, p=4)
+print_step "Hashing admin password with argon2id"
+ADMIN_TOKEN=$(echo -n "${ADMIN_PASSWORD}" | argon2 "$(openssl rand -base64 32)" -e -id -k 65540 -t 3 -p 4)
 
 if [ -z "${ADMIN_TOKEN}" ]; then
-    print_error "Failed to generate admin token"
+    print_error "Failed to generate argon2id PHC string"
     exit 1
 fi
 
-# Save plain-text password to a secure file for reference
+# Save the plaintext password (NOT the hash) since that's what you log in with
 ADMIN_PASS_FILE="${NEXUS_VAULT_DATA_DIR}/.admin_password"
 echo "${ADMIN_PASSWORD}" > "${ADMIN_PASS_FILE}"
 chmod 600 "${ADMIN_PASS_FILE}"
@@ -46,6 +71,8 @@ if ! docker network inspect nexus-net >/dev/null 2>&1; then
 fi
 
 # Run Vaultwarden container
+# Note: ADMIN_TOKEN here is the argon2id PHC hash, not the plaintext password.
+# Passing via -e avoids the docker-compose $$ escaping issue entirely.
 print_step "Starting Vaultwarden container"
 docker run -d \
     --name vaultwarden \
