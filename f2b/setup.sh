@@ -29,9 +29,9 @@ mkdir -p "${NEXUS_F2B_ETC_DIR}"
 print_step "Generating jail.local configuration"
 cat > "${NEXUS_F2B_OPT_DIR}/jail.local" << EOF
 [DEFAULT]
-bantime = 1d
+bantime = 15m
 findtime = 15m
-maxretry = 3
+maxretry = 5
 banaction = ufw
 
 [sshd]

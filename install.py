@@ -152,6 +152,9 @@ def copy_repo_path(repo_path):
         # Jellyfin files
         ("jelly/setup.sh", "jelly/setup.sh"),
 
+        # jfa-go files
+        ("jfa/setup.sh", "jfa/setup.sh"),
+
         # Nextcloud files
         ("nextcloud/setup.sh", "nextcloud/setup.sh"),
 
