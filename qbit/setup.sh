@@ -15,8 +15,17 @@ NEXUS_QBIT_WG_TARGET="${NEXUS_QBIT_WG_DIR}/wg0.conf"
 # WireGuard config file
 NEXUS_WG_CONF="${NEXUS_ETC_DIR}/keys/wg0.conf"
 
-# Optional: set to enable LAN CIDR (access WebUI directly from LAN; not only via nginx)
+# Docker network configuration
+NEXUS_DOCKER_NETWORK="nexus-net"
+NEXUS_DOCKER_SUBNET="172.18.0.0/16"
+NEXUS_DOCKER_GATEWAY="172.18.0.1"
+
+# LAN CIDR (access WebUI directly from LAN; not only via nginx)
 VPN_LAN_CIDR="192.168.1.0/24"
+
+# Combined list of networks the VPN should NOT tunnel
+# (LAN + Docker subnet so qBittorrent can reach sibling containers like Jackett)
+VPN_LAN_NETWORKS="${VPN_LAN_CIDR},${NEXUS_DOCKER_SUBNET}"
 
 print_header "SETTING UP QBITTORRENT WITH WIREGUARD VPN"
 
@@ -36,15 +45,15 @@ print_step "Copying WireGuard config to qBittorrent config directory"
 cp "${NEXUS_WG_CONF}" "${NEXUS_QBIT_WG_TARGET}"
 
 # Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
+if ! docker network inspect "${NEXUS_DOCKER_NETWORK}" >/dev/null 2>&1; then
+    print_step "Creating Docker network '${NEXUS_DOCKER_NETWORK}'"
 
     if ! docker network create \
         --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
+        --subnet "${NEXUS_DOCKER_SUBNET}" \
+        --gateway "${NEXUS_DOCKER_GATEWAY}" \
+        "${NEXUS_DOCKER_NETWORK}" >/dev/null 2>&1; then
+        print_error "Failed to create Docker network '${NEXUS_DOCKER_NETWORK}' (subnet or gateway already in use, choose a new range)"
         exit 1
     fi
 fi
@@ -53,7 +62,7 @@ fi
 print_step "Starting qBittorrent container with WireGuard VPN"
 docker run -d \
     --name qbittorrent \
-    --network nexus-net \
+    --network "${NEXUS_DOCKER_NETWORK}" \
     --restart unless-stopped \
     --cap-add=NET_ADMIN \
     -e PUID=1000 \
@@ -69,7 +78,7 @@ docker run -d \
     -e VPN_HEALTHCHECK_ENABLED="false" \
     -e PRIVOXY_ENABLED="false" \
     -e UNBOUND_ENABLED="false" \
-    -e VPN_LAN_NETWORK="${VPN_LAN_CIDR}" \
+    -e VPN_LAN_NETWORK="${VPN_LAN_NETWORKS}" \
     -v "${NEXUS_QBIT_CONFIG_PATH}":/config \
     ghcr.io/hotio/qbittorrent:latest
 
