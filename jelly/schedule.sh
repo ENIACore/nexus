@@ -36,7 +36,7 @@ sudo tee "${NEXUS_MLM_CRON_FILE}" > /dev/null << EOF
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 # Run every 2 hours
-${NEXUS_MLM_CRON_SCHEDULE} root mlm -mode=subtitle -dry-run=false -movie-path="${NEXUS_MLM_MOVIE_PATH}" -show-path="${NEXUS_MLM_SHOW_PATH}" -manager-path="${NEXUS_MLM_MANAGER_PATH}" -log-stdout=false -torrent-path="${NEXUS_MLM_TORRENT_PATH}" -incomplete-path="${NEXUS_MLM_INCOMPLETE_PATH}" -interactive=false -tmdb-api-key="${NEXUS_MLM_TMDB_API_KEY}" -limit=0 -os-api-key="${NEXUS_MLM_OS_API_KEY}" -os-user-agent="${NEXUS_MLM_OS_USER_AGENT}" -os-user="${NEXUS_MLM_OS_USER}" -os-pass="${NEXUS_MLM_OS_PASS}" >> "${NEXUS_MLM_MANAGER_PATH}/logs/cronjob.log" 2>&1
+${NEXUS_MLM_CRON_SCHEDULE} root mlm -mode=subtitle -dry-run=false -movie-path="${NEXUS_MLM_MOVIE_PATH}" -show-path="${NEXUS_MLM_SHOW_PATH}" -manager-path="${NEXUS_MLM_MANAGER_PATH}" -log-stdout=false -torrent-path="${NEXUS_MLM_TORRENT_PATH}" -incomplete-path="${NEXUS_MLM_INCOMPLETE_PATH}" -interactive=false -tmdb-api-key="${NEXUS_MLM_TMDB_API_KEY}" -limit=80 -os-api-key="${NEXUS_MLM_OS_API_KEY}" -os-user-agent="${NEXUS_MLM_OS_USER_AGENT}" -os-user="${NEXUS_MLM_OS_USER}" -os-pass="${NEXUS_MLM_OS_PASS}" >> "${NEXUS_MLM_MANAGER_PATH}/logs/cronjob.log" 2>&1
 EOF
 
 # Set proper permissions for system cron file
