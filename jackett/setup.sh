@@ -38,6 +38,7 @@ fi
 print_step "Starting Jackett container"
 docker run -d \
     --name jackett \
+    --hostname jackett.internal \
     --network nexus-net \
     -e PUID=1000 \
     -e PGID=1000 \

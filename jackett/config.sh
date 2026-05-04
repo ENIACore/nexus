@@ -8,7 +8,7 @@ source "${NEXUS_OPT_DIR}/lib/log.sh"
 NEXUS_JACKETT_OPT_DIR="${NEXUS_OPT_DIR}/jackett"
 QBIT_CONTAINER_NAME="qbittorrent"
 JACKETT_CONFIG_PATH_IN_QBIT="/config/data/nova3/engines/jackett.json"
-JACKETT_URL="http://jackett:9117"
+JACKETT_URL="http://jackett.internal:9117"
 
 print_header "SETTING UP JACKETT/QBITTORRENT SEARCH PLUGIN CONFIG"
 

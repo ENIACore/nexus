@@ -22,7 +22,7 @@ server {
     
     
     location / {
-        proxy_pass http://jackett:9117;
+        proxy_pass http://jackett.internal:9117;
         include /etc/nginx/snippets/http-proxy-params.conf;
     }
 

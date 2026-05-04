@@ -21,11 +21,11 @@ NEXUS_DOCKER_SUBNET="172.18.0.0/16"
 NEXUS_DOCKER_GATEWAY="172.18.0.1"
 
 # LAN CIDR (access WebUI directly from LAN; not only via nginx)
+# NOTE: Do NOT add the Docker subnet here — it's the container's own
+# directly-attached network and including it causes a route conflict
+# in hotio's startup (eth0 is already on 172.18.0.0/16). Container-to-
+# container traffic on nexus-net bypasses the VPN automatically.
 VPN_LAN_CIDR="192.168.1.0/24"
-
-# Combined list of networks the VPN should NOT tunnel
-# (LAN + Docker subnet so qBittorrent can reach sibling containers like Jackett)
-VPN_LAN_NETWORKS="${VPN_LAN_CIDR},${NEXUS_DOCKER_SUBNET}"
 
 print_header "SETTING UP QBITTORRENT WITH WIREGUARD VPN"
 
@@ -78,7 +78,7 @@ docker run -d \
     -e VPN_HEALTHCHECK_ENABLED="false" \
     -e PRIVOXY_ENABLED="false" \
     -e UNBOUND_ENABLED="false" \
-    -e VPN_LAN_NETWORK="${VPN_LAN_NETWORKS}" \
+    -e VPN_LAN_NETWORK="${VPN_LAN_CIDR}" \
     -v "${NEXUS_QBIT_CONFIG_PATH}":/config \
     ghcr.io/hotio/qbittorrent:latest
 
