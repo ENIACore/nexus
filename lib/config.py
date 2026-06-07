@@ -24,6 +24,19 @@ SERVER_CLONE_PATH = Path("/tmp/server-configs")
 SERVER_CONFIG_PATH = Path("/etc/server")
 SERVER_CONFIG_FILE_PATH = SERVER_CONFIG_PATH / "config.json"
 
+# Service paths
+CF_CONFIG_PATH = Path("/etc/cloudflare")
+NGINX_CONFIG_PATH = Path("/etc/nginx")
+F2B_CONFIG_PATH = Path("/etc/f2b")
+UFW_CONFIG_PATH = Path("/etc/ufw")
+JELLY_CONFIG_PATH = Path("/etc/jelly")
+JFA_CONFIG_PATH = Path("/etc/jfa")
+NEXTCLOUD_CONFIG_PATH = Path("/etc/nextcloud")
+JACKETT_CONFIG_PATH = Path("/etc/jackett")
+VAULT_CONFIG_PATH = Path("/etc/vault")
+RAID_CONFIG_PATH = Path("/etc/raid")
+MC_CONFIG_PATH = Path("/etc/mc")
+
 # Ubuntu settings
 SERVER_USER: str = "server"
 

@@ -1,78 +1,64 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import argparse
+import subprocess
+import sys
 
-print_header "CREATING DNS CERTIFICATE"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_file
+from common import run_cmd
+from config import require_config_value
+from formatting import print_error, print_header, print_step, print_success
 
-# !Prior to running script
-# Add cloudflare.ini file to /etc/nexus/keys/ with API Key `dns_cloudflare_api_token = <token>`
-# Chmod 600 cloudflare.ini
+CF_INI_FILE = "/etc/cloudflare/cloudflare.ini"
 
-NEXUS_CF_INI_FILE="${NEXUS_ETC_DIR}/keys/cloudflare.ini"
-DRY_RUN=""
 
-# Ensure ini file is present 
-require_file "${NEXUS_CF_INI_FILE}" "Cloudflare ini file containing cloudflare api key" 
+def main():
+    print_header("CREATING DNS CERTIFICATE")
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        --dry-run|-d)
-            DRY_RUN="--dry-run"
-            print_info "Running in dry-run mode (no certificates will be created)"
-            shift
-            ;;
-        *)
-            print_error "Unknown option: $1"
-            echo "Usage: $0 [--dry-run|-d]"
-            exit 1
-            ;;
-    esac
-done
+    require_file(CF_INI_FILE, "Cloudflare ini file with dns_cloudflare_api_token")
 
-# Verify credentials file exists
-if [[ ! -f "${NEXUS_CF_INI_FILE}" ]]; then
-    print_error "Cloudflare credentials file not found at ${NEXUS_CF_INI_FILE}"
-    exit 1
-fi
+    root_domain = require_config_value("ROOT_DOMAIN")
+    wildcard_domain = require_config_value("WILDCARD_DOMAIN")
 
-if [[ -n "${DRY_RUN}" ]]; then
-    print_step "Testing SSL certificate creation for ${NEXUS_DOMAIN} and ${NEXUS_WILDCARD_DOMAIN}..."
-else
-    print_step "Creating SSL certificate for ${NEXUS_DOMAIN} and ${NEXUS_WILDCARD_DOMAIN}..."
-fi
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--dry-run", "-d", action="store_true")
+    args = parser.parse_args()
 
-sudo certbot certonly \
-  --dns-cloudflare \
-  --dns-cloudflare-credentials "${NEXUS_CF_INI_FILE}" \
-  --dns-cloudflare-propagation-seconds 60 \
-  -d "${NEXUS_WILDCARD_DOMAIN}" \
-  -d "${NEXUS_DOMAIN}" \
-  ${DRY_RUN}
+    if args.dry_run:
+        print_step(
+            f"Testing SSL certificate creation for"
+            f" {root_domain} and {wildcard_domain}..."
+        )
+    else:
+        print_step(
+            f"Creating SSL certificate for"
+            f" {root_domain} and {wildcard_domain}..."
+        )
 
-if [[ $? -ne 0 ]]; then
-    print_error "Certificate creation failed"
-    exit 1
-fi
+    certbot_cmd = (
+        f"sudo certbot certonly"
+        f" --dns-cloudflare"
+        f" --dns-cloudflare-credentials {CF_INI_FILE}"
+        f" --dns-cloudflare-propagation-seconds 60"
+        f" -d {wildcard_domain}"
+        f" -d {root_domain}"
+    )
+    if args.dry_run:
+        certbot_cmd += " --dry-run"
 
-print_success "Certificate created successfully"
+    run_cmd(certbot_cmd)
+    print_success("Certificate created successfully")
 
-sleep 1
+    print_step("Verifying certbot renewal timer is working...")
+    subprocess.run(["sudo", "systemctl", "status", "certbot.timer"])
 
-print_step "Verifying certbot renewal timer is working..."
-sudo systemctl status certbot.timer
+    print_step("Verifying certbot renewal functions...")
+    run_cmd("sudo certbot renew --dry-run")
 
-print_step "Verifying certbot renewal functions..."
-sudo certbot renew --dry-run
+    print_success("Certificate renewal test passed")
+    print_success("Certificate setup complete")
 
-if [[ $? -eq 0 ]]; then
-    print_success "Certificate renewal test passed"
-else
-    print_error "Certificate renewal test failed"
-    exit 1
-fi
 
-print_success "Certificate setup complete"
+if __name__ == "__main__":
+    main()

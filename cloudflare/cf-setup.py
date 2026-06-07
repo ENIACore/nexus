@@ -1,46 +1,56 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
 
-print_header "SETTING UP CLOUDFLARE DNS AND CRON JOB"
-
-NEXUS_CF_OPT_DIR="${NEXUS_OPT_DIR}/cloudflare"
-NEXUS_CF_LOG_DIR="${NEXUS_LOG_DIR}/cloudflare"
-NEXUS_CF_LOG_FILE="${NEXUS_CF_LOG_DIR}/dns.log"
-
-# Ensure API key is present 
-require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
-
-# Ensure nexus user exists
-ensure_nexus_user
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import ensure_server_user
+from common import ensure_dir, run_cmd, write_lines
+from config import (
+    CF_CONFIG_PATH,
+    SERVER_USER,
+    prompt_and_save,
+)
+from formatting import print_error, print_header, print_step, print_success
 
 
-print_info "Log directory created successfully"
-print_step "Logs will be written to: ${NEXUS_CF_LOG_FILE}"
+def main():
+    print_header("SETTING UP CLOUDFLARE DNS AND CRON JOB")
 
-# Run initial DNS update
-print_step "Running initial DNS update..."
-source "${NEXUS_CF_OPT_DIR}/update_dns.sh"
+    CF_API_KEY = prompt_and_save(
+        "CF_API_KEY",
+        "Input API key for cloudflare, no input to keep current value",
+    )
+    CF_INI_PATH = CF_CONFIG_PATH / "cloudflare.ini"
+    write_lines(CF_INI_PATH, [f"dns_cloudflare_api_token = {CF_API_KEY}"])
+    CF_INI_PATH.chmod(0o600)
 
-if [[ $? -ne 0 ]]; then
-    print_error "ERROR: Initial DNS update failed"
-    exit 1
-fi
+    CF_LOG_DIR = prompt_and_save(
+        "CF_LOG_DIR",
+        "Input path to cloudflare log directory, no input for default",
+        "/var/log/cloudflare",
+    )
+    ensure_server_user()
 
-# Schedule automated DNS updates
-print_step "Scheduling automated DNS updates..."
-source "${NEXUS_CF_OPT_DIR}/schedule.sh"
+    ensure_dir(CF_LOG_DIR)
+    print_step(f"Logs will be written to: {CF_LOG_DIR}/dns.log")
 
-if [[ $? -ne 0 ]]; then
-    print_error "ERROR: Failed to schedule DNS updates"
-    exit 1
-fi
+    print_step("Running initial DNS update...")
+    result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-update-dns")
+    if result.returncode != 0:
+        print_error("Initial DNS update failed")
+        sys.exit(1)
 
-# Set ownership to nexus user so cron job can write logs - It will be set to root now
-sudo chown -R ${NEXUS_USER}:${NEXUS_USER} "${NEXUS_CF_LOG_DIR}"
-sudo chmod 755 "${NEXUS_CF_LOG_DIR}"
+    print_step("Scheduling automated DNS updates...")
+    result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-schedule")
+    if result.returncode != 0:
+        print_error("Failed to schedule DNS updates")
+        sys.exit(1)
 
-echo "Cloudflare setup complete"
+    run_cmd(f"sudo chown -R {SERVER_USER}:{SERVER_USER} {CF_LOG_DIR}")
+    run_cmd(f"sudo chmod 755 {CF_LOG_DIR}")
+
+    print_success("Cloudflare setup complete")
+
+
+if __name__ == "__main__":
+    main()

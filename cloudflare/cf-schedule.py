@@ -1,47 +1,58 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import subprocess
+import sys
+from pathlib import Path
 
-print_header "SCHEDULING DNS UPDATE JOB"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import ensure_server_user
+from common import run_cmd
+from config import SERVER_USER, require_config_value
+from formatting import print_error, print_header, print_info, print_step
 
-# Ensure API key is present 
-require_file "${NEXUS_ETC_DIR}/keys/cloudflare.sh" "Cloudflare api key file containing NEXUS_CF_API_KEY variable"
+CF_CRON_FILE = "/etc/cron.d/server-cloudflare-dns"
+CF_CRON_SCHEDULE = "*/5 * * * *"
+CF_DNS_SCRIPT = "/usr/local/sbin/cf-update-dns"
 
-NEXUS_CF_DNS_SCRIPT="${NEXUS_OPT_DIR}/cloudflare/update_dns.sh"
-NEXUS_CF_CRON_SCHEDULE="*/5 * * * *"
-NEXUS_CF_CRON_FILE="/etc/cron.d/nexus-cloudflare-dns"
 
-# Ensure nexus user exists
-ensure_nexus_user
+def main():
+    print_header("SCHEDULING DNS UPDATE JOB")
 
-# Check if cron job already exists
-if [[ -f "${NEXUS_CF_CRON_FILE}" ]]; then
-    echo "System cron job already exists at ${NEXUS_CF_CRON_FILE}"
-    exit 1
-fi
+    require_config_value("CF_API_KEY")
+    ensure_server_user()
 
-print_step "Creating system cron job at ${NEXUS_CF_CRON_FILE}..."
+    if Path(CF_CRON_FILE).exists():
+        print_error(f"Cron job already exists at {CF_CRON_FILE}")
+        sys.exit(1)
 
-# Create system cron job that runs as nexus user
-sudo tee "${NEXUS_CF_CRON_FILE}" > /dev/null << EOF
-# Cloudflare DNS updater - runs as nexus user
-# Updates DNS records every 5 minutes and on reboot
+    print_step(f"Creating system cron job at {CF_CRON_FILE}...")
 
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    cron_content = (
+        f"# Cloudflare DNS updater - runs as {SERVER_USER} user\n"
+        f"# Updates DNS records every 5 minutes and on reboot\n"
+        f"\n"
+        f"SHELL=/bin/bash\n"
+        f"PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n"
+        f"\n"
+        f"# Run on boot\n"
+        f"@reboot {SERVER_USER} {CF_DNS_SCRIPT}\n"
+        f"\n"
+        f"# Run every 5 minutes\n"
+        f"{CF_CRON_SCHEDULE} {SERVER_USER} {CF_DNS_SCRIPT}\n"
+    )
 
-# Run on boot
-@reboot ${NEXUS_USER} ${NEXUS_CF_DNS_SCRIPT}
+    subprocess.run(
+        ["sudo", "tee", CF_CRON_FILE],
+        input=cron_content,
+        text=True,
+        check=True,
+        capture_output=True,
+    )
+    run_cmd(f"sudo chmod 644 {CF_CRON_FILE}")
 
-# Run every 5 minutes
-${NEXUS_CF_CRON_SCHEDULE} ${NEXUS_USER} ${NEXUS_CF_DNS_SCRIPT}
-EOF
+    print_info("System cron job created successfully")
+    print_info(f"DNS update will run every 5 minutes as user '{SERVER_USER}'")
 
-# Set proper permissions for system cron file
-sudo chmod 644 "${NEXUS_CF_CRON_FILE}"
 
-print_info "System cron job created successfully"
-print_info "DNS update will run every 5 minutes as user '${NEXUS_USER}'"
+if __name__ == "__main__":
+    main()

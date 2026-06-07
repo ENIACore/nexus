@@ -9,11 +9,22 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
-from common import copy_path
+from common import copy_path, ensure_dir
 from config import (
+    CF_CONFIG_PATH,
+    F2B_CONFIG_PATH,
+    JACKETT_CONFIG_PATH,
+    JELLY_CONFIG_PATH,
+    JFA_CONFIG_PATH,
+    MC_CONFIG_PATH,
+    NEXTCLOUD_CONFIG_PATH,
+    NGINX_CONFIG_PATH,
+    RAID_CONFIG_PATH,
     SERVER_CLONE_PATH,
     SERVER_CONFIG_PATH,
     SERVER_USER,
+    UFW_CONFIG_PATH,
+    VAULT_CONFIG_PATH,
     get_config_value,
     prompt_and_save,
     set_config_value,
@@ -35,30 +46,23 @@ def create_directories() -> None:
     print_step("Creating system directories...")
 
     directories = [
-        "/etc/cloudflare",
-        "/etc/nginx",
-        "/etc/f2b",
-        "/etc/ufw",
-        "/etc/jelly",
-        "/etc/jfa",
-        "/etc/nextcloud",
-        "/etc/jackett",
-        "/etc/vault",
-        "/etc/raid",
-        "/etc/mc",
+        CF_CONFIG_PATH,
+        NGINX_CONFIG_PATH,
+        F2B_CONFIG_PATH,
+        UFW_CONFIG_PATH,
+        JELLY_CONFIG_PATH,
+        JFA_CONFIG_PATH,
+        NEXTCLOUD_CONFIG_PATH,
+        JACKETT_CONFIG_PATH,
+        VAULT_CONFIG_PATH,
+        RAID_CONFIG_PATH,
+        MC_CONFIG_PATH,
         SERVER_CONFIG_PATH,
     ]
 
-    print_group_start("Creating configuration directories")
+    print_step("Creating configuration directories")
     for directory in directories:
-        try:
-            Path(directory).mkdir(parents=True, exist_ok=True)
-            print_group_step(f"Created directory: {directory}")
-        except Exception as e:
-            print_group_end(
-                f"Failed to create directory {directory}: {e}", success=False
-            )
-            sys.exit(1)
+        ensure_dir(str(directory))
     print_group_end()
 
 
@@ -67,10 +71,10 @@ def copy_template_files():
 
     keys_path = SERVER_CLONE_PATH / "keys"
     templates = [
-        ("/etc/cloudflare", "cloudflare.toml.template"),
-        ("/etc/server", "mlm.toml.template"),
+        (CF_CONFIG_PATH, "cloudflare.toml.template"),
+        (SERVER_CONFIG_PATH, "mlm.toml.template"),
         (SERVER_CONFIG_PATH, "personal-site.toml.template"),
-        ("/etc/server", "wg0.conf.template"),
+        (SERVER_CONFIG_PATH, "wg0.conf.template"),
     ]
 
     print_group_start("Copying template files")
@@ -78,7 +82,7 @@ def copy_template_files():
         src = keys_path / template[1]
         dest = Path(template[0]) / template[1]
         copy_path(src, dest)
-        print_group_step(f"Copied template file {template[1]} to {src}")
+        print_group_step(f"Copied template file {template[1]} to {dest}")
     print_group_end(
         f"{RED} Make sure to fill in values and remove .template tag for all template files{RESET}"
     )
@@ -126,6 +130,36 @@ def create_config():
         f"Media services are services used for media hosting (qbittorrent, jellyfin, jackett)"
     )
     set_config_value("MEDIA_SERVICES_PATH", "/mnt/media")
+
+    prompt_and_save(
+        "CF_API_KEY",
+        "Enter the Cloudflare Bearer API token for DNS updates",
+    )
+
+    print_info(f"Setting CF_CONFIG_PATH ({CF_CONFIG_PATH}")
+    set_config_value("CF_CONFIG_PATH", str(CF_CONFIG_PATH))
+    print_info(f"Setting NGINX_CONFIG_PATH ({NGINX_CONFIG_PATH}")
+    set_config_value("NGINX_CONFIG_PATH", str(NGINX_CONFIG_PATH))
+    print_info(f"Setting F2B_CONFIG_PATH ({F2B_CONFIG_PATH}")
+    set_config_value("F2B_CONFIG_PATH", str(F2B_CONFIG_PATH))
+    print_info(f"Setting UFW_CONFIG_PATH ({UFW_CONFIG_PATH}")
+    set_config_value("UFW_CONFIG_PATH", str(UFW_CONFIG_PATH))
+    print_info(f"Setting JELLY_CONFIG_PATH ({JELLY_CONFIG_PATH}")
+    set_config_value("JELLY_CONFIG_PATH", str(JELLY_CONFIG_PATH))
+    print_info(f"Setting JFA_CONFIG_PATH ({JFA_CONFIG_PATH}")
+    set_config_value("JFA_CONFIG_PATH", str(JFA_CONFIG_PATH))
+    print_info(f"Setting NEXTCLOUD_CONFIG_PATH ({NEXTCLOUD_CONFIG_PATH}")
+    set_config_value("NEXTCLOUD_CONFIG_PATH", str(NEXTCLOUD_CONFIG_PATH))
+    print_info(f"Setting JACKETT_CONFIG_PATH ({JACKETT_CONFIG_PATH}")
+    set_config_value("JACKETT_CONFIG_PATH", str(JACKETT_CONFIG_PATH))
+    print_info(f"Setting VAULT_CONFIG_PATH ({VAULT_CONFIG_PATH}")
+    set_config_value("VAULT_CONFIG_PATH", str(VAULT_CONFIG_PATH))
+    print_info(f"Setting RAID_CONFIG_PATH ({RAID_CONFIG_PATH}")
+    set_config_value("RAID_CONFIG_PATH", str(RAID_CONFIG_PATH))
+    print_info(f"Setting MC_CONFIG_PATH ({MC_CONFIG_PATH}")
+    set_config_value("MC_CONFIG_PATH", str(MC_CONFIG_PATH))
+    print_info(f"Setting SERVER_CONFIG_PATH ({SERVER_CONFIG_PATH}")
+    set_config_value("SERVER_CONFIG_PATH", str(SERVER_CONFIG_PATH))
 
 
 def cleanup():

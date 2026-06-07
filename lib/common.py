@@ -69,6 +69,19 @@ def add_env_cmd(cmd: str, description: str) -> None:
     )
 
 
+def ensure_dir(path: str) -> Path:
+    try:
+        path_obj = Path(path)
+        if not path_obj.exists():
+            path_obj.mkdir(parents=True, exist_ok=True)
+            print_success(f"Directory created: {path}")
+    except Exception:
+        print_error(f"Failed to create directory {path}")
+        sys.exit(1)
+
+    return path_obj
+
+
 def clear_env() -> None:
     """Delete the source-env file if it exists."""
     if SERVER_ENV_PATH.exists():
@@ -137,3 +150,16 @@ def copy_path(src: str | Path, dest: str | Path) -> None:
         shutil.copy2(src, dest)
 
     print_success(f"Copied: {src} → {dest}")
+
+
+def write_lines(path: str | Path, lines: list[str]) -> None:
+    """Write a list of strings to a file, one per line.
+    Overwrites the file if it already exists."""
+    path_obj = Path(path)
+    path_obj.parent.mkdir(parents=True, exist_ok=True)
+
+    if path_obj.exists():
+        path_obj.unlink()
+
+    path_obj.write_text("\n".join(lines) + "\n")
+    print_success(f"Written: {path}")
