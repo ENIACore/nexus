@@ -5,7 +5,13 @@ from pathlib import Path
 from subprocess import CompletedProcess
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
-from formatting import print_error, print_info, print_step, print_success, print_warning
+from formatting import (
+    print_error,
+    print_info,
+    print_step,
+    print_success,
+    print_warning,
+)
 
 SRVR_BIN = "/usr/local/sbin"
 SCRIPTS_DIR = Path(__file__).parent.resolve()
@@ -100,7 +106,9 @@ def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
     return result
 
 
-def copy_path(src: str | Path, dest: str | Path, overwrite: bool = True) -> None:
+def copy_path(
+    src: str | Path, dest: str | Path, overwrite: bool = True
+) -> None:
     """Recursively copy a file or directory from src to dest.
 
     Args:
@@ -127,7 +135,9 @@ def copy_path(src: str | Path, dest: str | Path, overwrite: bool = True) -> None
         else:
             dest.unlink()
 
-    print_step(f"Copying {'directory' if src.is_dir() else 'file'}: {src} → {dest}")
+    print_step(
+        f"Copying {'directory' if src.is_dir() else 'file'}: {src} → {dest}"
+    )
 
     dest.parent.mkdir(parents=True, exist_ok=True)
 

@@ -32,7 +32,12 @@ def clone_repository():
 def create_directories():
     print_step("Creating system directories...")
 
-    directories = ["/opt/nexus", "/var/log/nexus", "/etc/nexus", "/etc/nexus/keys"]
+    directories = [
+        "/opt/nexus",
+        "/var/log/nexus",
+        "/etc/nexus",
+        "/etc/nexus/keys",
+    ]
 
     for directory in directories:
         try:
