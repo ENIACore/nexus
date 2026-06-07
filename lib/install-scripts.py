@@ -33,7 +33,7 @@ def create_dirs():
         init.touch()
 
 
-def move_scripts():
+def copy_scripts():
     lib_prefix = SCRIPTS_DIR / "lib"
 
     for script in SCRIPTS_DIR.rglob("*.py"):
@@ -47,7 +47,7 @@ def move_scripts():
             dest = SBIN / script.stem
 
         dest.unlink(missing_ok=True)
-        shutil.move(str(script), str(dest))
+        shutil.copy2(str(script), str(dest))
         dest.chmod(0o755)
 
 
@@ -61,7 +61,7 @@ def add_to_path_config(rc_file: Path):
 
 def main():
     create_dirs()
-    move_scripts()
+    copy_scripts()
     add_to_path_config(BASHRC)
     add_to_path_config(ZSHRC)
     os.environ["PATH"] = f"{SBIN}:{os.environ.get('PATH', '')}"
