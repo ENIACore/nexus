@@ -29,7 +29,7 @@ from formatting import (
     print_warning,
 )
 
-from install import CLONE_PATH
+CLONE_PATH = Path("/tmp/server-configs")
 
 
 def create_directories() -> None:
