@@ -21,7 +21,7 @@ fi
 IGNORE = {
     # "setup",
     "install",
-    # "uninstall",
+    "install-scripts",
 }
 
 
