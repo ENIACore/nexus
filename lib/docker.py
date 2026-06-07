@@ -4,11 +4,11 @@ import subprocess
 import sys
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
-from formatting import print_error, print_info, print_step, print_success
-
-NETWORK_NAME: str = "server-net"
-NETWORK_SUBNET: str = "172.18.0.0/16"
-NETWORK_GATEWAY: str = "172.18.0.1"
+from config import (
+    DOCKER_NETWORK_GATEWAY,
+    DOCKER_NETWORK_NAME,
+    DOCKER_NETWORK_SUBNET,
+)
 from formatting import (
     GREY,
     RESET,
@@ -26,15 +26,15 @@ from formatting import (
 def ensure_network() -> None:
     """Ensure the Docker network exists, creating it if necessary."""
     probe = subprocess.run(
-        ["docker", "network", "inspect", NETWORK_NAME],
+        ["docker", "network", "inspect", DOCKER_NETWORK_NAME],
         capture_output=True,
     )
 
     if probe.returncode == 0:
-        print_info(f"Validated Docker network '{NETWORK_NAME}' exists")
+        print_info(f"Validated Docker network '{DOCKER_NETWORK_NAME}' exists")
         return
 
-    print_step(f"Creating Docker network '{NETWORK_NAME}'")
+    print_step(f"Creating Docker network '{DOCKER_NETWORK_NAME}'")
 
     result = subprocess.run(
         [
@@ -44,25 +44,27 @@ def ensure_network() -> None:
             "--driver",
             "bridge",
             "--subnet",
-            NETWORK_SUBNET,
+            DOCKER_NETWORK_SUBNET,
             "--gateway",
-            NETWORK_GATEWAY,
-            NETWORK_NAME,
+            DOCKER_NETWORK_GATEWAY,
+            DOCKER_NETWORK_NAME,
         ],
         capture_output=True,
     )
 
     if result.returncode == 0:
-        print_success(f"Docker network '{NETWORK_NAME}' created")
+        print_success(f"Docker network '{DOCKER_NETWORK_NAME}' created")
     else:
         print_error(
-            f"Failed to create Docker network '{NETWORK_NAME}' "
+            f"Failed to create Docker network '{DOCKER_NETWORK_NAME}' "
             "(subnet or gateway already in use, choose a new range)"
         )
         sys.exit(1)
 
 
-def run_container(name: str, opts: list[str], notes: list[str] | None = None) -> None:
+def run_container(
+    name: str, opts: list[str], notes: list[str] | None = None
+) -> None:
     """Run a Docker container and print result.
 
     Args:
@@ -79,7 +81,9 @@ def run_container(name: str, opts: list[str], notes: list[str] | None = None) ->
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if result.returncode == 0:
-        print_group_end(f"Container '{name}' started successfully", success=True)
+        print_group_end(
+            f"Container '{name}' started successfully", success=True
+        )
         if notes:
             print_info("")
             print_info("Next steps:")

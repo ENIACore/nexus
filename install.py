@@ -9,20 +9,28 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
-from common import copy_path, run_cmd  # noqa: E402
-from formatting import (  # noqa: E402
+from common import copy_path, run_cmd
+from config import (
+    CONFIG_PATH,
+    SERVER_USER,
+    get_config_value,
+    prompt_and_save,
+    set_config_value,
+)
+from formatting import (
     RED,
     RESET,
     print_group_end,
     print_group_start,
     print_group_step,
+    print_info,
     print_step,
     print_success,
     print_warning,
 )
 
 REPO_URL = "https://github.com/ENIACore/server-configs.git"
-CLONE_PATH = Path("/tmp/srvr-install")
+CLONE_PATH = Path("/tmp/server-install")
 
 
 def clone_repository() -> Path:
@@ -52,8 +60,8 @@ def create_directories() -> None:
         "/etc/jackett",
         "/etc/vault",
         "/etc/raid",
-        "/etc/server",
         "/etc/mc",
+        CONFIG_PATH,
     ]
 
     print_group_start("Creating configuration directories")
@@ -91,6 +99,50 @@ def copy_template_files():
     )
 
 
+def create_config():
+    print_step("Getting values for server configuration")
+    prompt_and_save(
+        "ROOT_DOMAIN", "Enter the root domain for the server including TLD"
+    )
+    root_domain = get_config_value("ROOT_DOMAIN")
+
+    print_info(f"Setting wildcard domain (*.{root_domain})")
+    set_config_value("WILDCARD_DOMAIN", f"*.{root_domain}")
+
+    print_info(f"Setting jellyfin subdomain (jelly.{root_domain})")
+    set_config_value("JELLY_SUBDOMAIN", f"jelly.{root_domain}")
+
+    print_info(f"Setting qbittorrent subdomain (qbit.{root_domain})")
+    set_config_value("QBIT_SUBDOMAIN", f"qbit.{root_domain}")
+
+    print_info(f"Setting vaultwarden subdomain (vault.{root_domain})")
+    set_config_value("VAULT_SUBDOMAIN", f"vault.{root_domain}")
+
+    print_info(f"Setting nextcloud subdomain (nextcloud.{root_domain})")
+    set_config_value("NEXTCLOUD_SUBDOMAIN", f"nextcloud.{root_domain}")
+
+    print_info(f"Setting server user ({SERVER_USER})")
+    set_config_value("USER", f"{SERVER_USER}")
+
+    print_info(f"Setting essential services path (/mnt/essential)")
+    print_info(
+        f"Essential services are the most important services used (vaultwarden)"
+    )
+    set_config_value("ESSENTIAL_SERVICES_PATH", "/mnt/essential")
+
+    print_info(f"Setting essential core path (/mnt/core)")
+    print_info(
+        f"Core services are services used daily (minecraft, nextcloud)"
+    )
+    set_config_value("ESSENTIAL_SERVICES_PATH", "/mnt/core")
+
+    print_info(f"Setting essential media path (/mnt/media)")
+    print_info(
+        f"Media services are services used for media hosting (qbittorrent, jellyfin, jackett)"
+    )
+    set_config_value("ESSENTIAL_SERVICES_PATH", "/mnt/media")
+
+
 def cleanup():
     print_step("Cleaning up temporary files...")
 
@@ -101,97 +153,18 @@ def cleanup():
         except Exception:
             print_warning(f"Failed to remove {CLONE_PATH}")
 
-
-def create_config():
-    print_step("Getting values for server configuration")
-
-
-# Nexus domain and subdomains
-# export NEXUS_DOMAIN="{domain}"
-# export NEXUS_WILDCARD_DOMAIN="*.{domain}"
-# export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
-# export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
-# export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
-# export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
-
-# Nexus service user
-# export NEXUS_USER=nexus
-
-# Nexus main log dir
-# export NEXUS_LOG_DIR="/var/log/nexus"
-
-# Nexus main opt and etc dir
-# export NEXUS_OPT_DIR="/opt/nexus"
-# export NEXUS_ETC_DIR="/etc/nexus"
-
-# export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
-# export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
-# export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
-"""
-
-def create_config():
-    print_step("Creating configuration file...")
-
-    # Get domain from user
-    domain = input(f"{Colors.CYAN}Enter your root domain (e.g., example.com): {Colors.RESET}").strip()
-
-    if not domain:
-        print_error("Domain cannot be empty")
-        sys.exit(1)
-
-    # Get path for essential services (vaultwarden, backups etc) 
-    essential_services_path = input(f"{Colors.CYAN}Enter the path for all essential services (e.g., /mnt/essential): {Colors.RESET}").strip()
-    if not essential_services_path:
-        print_error("core services path cannot be empty")
-        sys.exit(1)
-
-    # Get path for core services (nextcloud, minecraft, etc) 
-    core_services_path = input(f"{Colors.CYAN}Enter the path for all core services (e.g., /mnt/core): {Colors.RESET}").strip()
-    if not core_services_path:
-        print_error("core services path cannot be empty")
-        sys.exit(1)
-
-    # Get path for media services (qbittorrent, jellyfin)
-    media_services_path = input(f"{Colors.CYAN}Enter the path for all media services (e.g., /mnt/media): {Colors.RESET}").strip()
-    if not media_services_path:
-        print_error("media services path cannot be empty")
-        sys.exit(1)
-
-    # Create config directory
-    config_dir = Path("/etc/nexus/conf")
-    config_dir.mkdir(parents=True, exist_ok=True)
-
-    # Create config file content
-    config_content = f"""  #!/bin/bash
-# Nexus Configuration File - /etc/nexus/conf/conf.sh
-
-"""
-    # Write config file
-    config_file = config_dir / "conf.sh"
-    config_file.write_text(config_content)
-    config_file.chmod(0o755)
-
-    print_success(f"Configuration file created at {config_file}")
-    print_info(f"Root domain: {domain}")
-    print_info(f"Essential services path: {essential_services_path}")
-    print_info(f"Core services path: {core_services_path}")
-    print_info(f"Media services path: {media_services_path}")
+    script_path = Path(__file__).resolve()
+    try:
+        script_path.unlink(missing_ok=True)
+        print_success(f"Removed installer script {script_path}")
+    except Exception:
+        print_warning(f"Failed to remove installer script {script_path}")
 
 
 if __name__ == "__main__":
-    print_header("NEXUS SERVER INSTALLATION")
-    
-    # Check if running as root
-    if os.geteuid() != 0:
-        print_error("This script must be run as root")
-        sys.exit(1)
-    
+    clone_repository()
+    run_cmd(f"bash {CLONE_PATH}/lib/install-scripts.py")
     create_directories()
-    repo_path = clone_repository()
-    copy_repo_path(repo_path)
-    copy_template_files(repo_path)
+    copy_template_files()
     create_config()
-    cleanup_temp_files()
-
-    print_success("Initial setup complete!")
-"""
+    cleanup()

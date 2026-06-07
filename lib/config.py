@@ -17,7 +17,18 @@ from formatting import (
     print_warning,
 )
 
+# Server paths
+SERVER_BIN = "/usr/local/sbin"
+SERVER_ENV_PATH = Path(f"{SERVER_BIN}/source-env")
 CONFIG_PATH = Path("/etc/server-config/config.json")
+
+# Ubuntu settings
+SERVER_USER: str = "server"
+
+# Docker settings
+DOCKER_NETWORK_NAME: str = "server-net"
+DOCKER_NETWORK_SUBNET: str = "172.18.0.0/16"
+DOCKER_NETWORK_GATEWAY: str = "172.18.0.1"
 
 
 def load_config() -> dict:

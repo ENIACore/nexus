@@ -6,9 +6,8 @@ import subprocess
 import sys
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
+from config import SERVER_USER
 from formatting import print_error, print_info, print_success
-
-SERVER_USER: str = "server"
 
 
 def _user_exists(username: str) -> bool:

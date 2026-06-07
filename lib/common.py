@@ -5,6 +5,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
+from config import SERVER_ENV_PATH
 from formatting import (  # noqa: E402
     print_error,
     print_info,
@@ -12,9 +13,6 @@ from formatting import (  # noqa: E402
     print_success,
     print_warning,
 )
-
-SRVR_BIN = "/usr/local/sbin"
-SCRIPTS_DIR = Path(__file__).parent.resolve()
 
 
 def copy_to_clipboard(text):
@@ -35,13 +33,10 @@ def copy_to_clipboard(text):
     return ""
 
 
-SOURCE_ENV_PATH = Path(f"{SRVR_BIN}/source-env")
-
-
 def _ensure_source_env() -> None:
-    if not SOURCE_ENV_PATH.exists():
-        SOURCE_ENV_PATH.write_text("#!/bin/sh\n")
-        SOURCE_ENV_PATH.chmod(0o755)
+    if not SERVER_ENV_PATH.exists():
+        SERVER_ENV_PATH.write_text("#!/bin/sh\n")
+        SERVER_ENV_PATH.chmod(0o755)
 
 
 def add_env_val(env_key: str, env_val: str, description: str) -> None:
@@ -49,7 +44,7 @@ def add_env_val(env_key: str, env_val: str, description: str) -> None:
     creating it if needed."""
     _ensure_source_env()
     export_line = f"# {description}\nexport {env_key}={env_val}"
-    with open(SOURCE_ENV_PATH, "a") as f:
+    with open(SERVER_ENV_PATH, "a") as f:
         f.write(f"\n{export_line}\n")
     print_info(f"Adding {env_key} to source env")
     print_info(f"Description: {description}")
@@ -63,7 +58,7 @@ def add_env_val(env_key: str, env_val: str, description: str) -> None:
 def add_env_cmd(cmd: str, description: str) -> None:
     _ensure_source_env()
     cmd_line = f"# {description}\n{cmd}"
-    with open(SOURCE_ENV_PATH, "a") as f:
+    with open(SERVER_ENV_PATH, "a") as f:
         f.write(f"\n{cmd_line}\n")
     print_info(f"Adding {cmd} to source env")
     print_info(f"Description: {description}")
@@ -76,8 +71,8 @@ def add_env_cmd(cmd: str, description: str) -> None:
 
 def clear_env() -> None:
     """Delete the source-env file if it exists."""
-    if SOURCE_ENV_PATH.exists():
-        SOURCE_ENV_PATH.unlink()
+    if SERVER_ENV_PATH.exists():
+        SERVER_ENV_PATH.unlink()
 
 
 def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
