@@ -18,6 +18,12 @@ if [[ ':$PATH:' != ':/usr/local/sbin:' ]]; then
 fi
 """
 
+IGNORE = {
+    # "setup",
+    "install",
+    # "uninstall",
+}
+
 
 def create_dirs():
     SBIN.mkdir(parents=True, exist_ok=True)
@@ -31,14 +37,16 @@ def move_scripts():
     lib_prefix = SCRIPTS_DIR / "lib"
 
     for script in SCRIPTS_DIR.rglob("*.py"):
-        # Determine destination: lib/ subtree → _lib, everything else → sbin root
+        if script.stem in IGNORE:
+            continue
+
         try:
             script.relative_to(lib_prefix)
             dest = LIB_DIR / script.stem
         except ValueError:
             dest = SBIN / script.stem
 
-        dest.unlink(missing_ok=True)  # Remove if already exists
+        dest.unlink(missing_ok=True)
         shutil.move(str(script), str(dest))
         dest.chmod(0o755)
 
@@ -46,7 +54,6 @@ def move_scripts():
 def add_to_path_config(rc_file: Path):
     rc_text = rc_file.read_text() if rc_file.exists() else ""
     if "/usr/local/sbin" in rc_text:
-        print(f"PATH already configured in {rc_file}")
         return
     with rc_file.open("a") as f:
         f.write(PATH_BLOCK)
