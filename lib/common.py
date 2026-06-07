@@ -5,7 +5,7 @@ from pathlib import Path
 from subprocess import CompletedProcess
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
-from formatting import (
+from formatting import (  # noqa: E402
     print_error,
     print_info,
     print_step,
@@ -97,7 +97,9 @@ def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
         else:
             print_success("Command completed successfully")
     else:
-        err = result.stderr.strip() if capture_output and result.stderr else ""
+        err = (
+            result.stderr.strip() if capture_output and result.stderr else ""
+        )
         print_error(
             f"""Command failed (exit {result.returncode})
             {": " + err if err else ""}"""
@@ -106,17 +108,14 @@ def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
     return result
 
 
-def copy_path(
-    src: str | Path, dest: str | Path, overwrite: bool = True
-) -> None:
+def copy_path(src: str | Path, dest: str | Path) -> None:
     """Recursively copy a file or directory from src to dest.
 
     Args:
         src:       Source file or directory path.
-        dest:      Destination path. For directories, this is the target directory
+        dest:      Destination path. For directories,
+                   this is the target directory
                    itself (not the parent), mirroring `cp -r src/ dest/`.
-        overwrite: If True (default), replace dest if it already exists.
-                   If False, skip with a warning instead.
     """
     import shutil
 
@@ -126,21 +125,17 @@ def copy_path(
         print_error(f"Copy failed: source does not exist: {src}")
         sys.exit(1)
 
-    if dest.exists():
-        if not overwrite:
-            print_warning(f"Skipping copy: destination already exists: {dest}")
-            return
-        if dest.is_dir():
-            shutil.rmtree(dest)
-        else:
-            dest.unlink()
+    # Overwrite file/dir if it exists
+    if dest.is_dir():
+        shutil.rmtree(dest)
+    else:
+        dest.unlink(missing_ok=True)
 
     print_step(
         f"Copying {'directory' if src.is_dir() else 'file'}: {src} → {dest}"
     )
 
     dest.parent.mkdir(parents=True, exist_ok=True)
-
     if src.is_dir():
         shutil.copytree(src, dest)
     else:
