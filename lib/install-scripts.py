@@ -42,7 +42,7 @@ def copy_scripts():
 
         try:
             script.relative_to(lib_prefix)
-            dest = LIB_DIR / script.stem
+            dest = LIB_DIR / script.name
         except ValueError:
             dest = SBIN / script.stem
 
