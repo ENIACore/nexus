@@ -56,10 +56,10 @@ The project emphasizes security and ease of use, handling everything from firewa
 
 ### Built With
 
-* [![Python][Python-badge]][Python-url]
-* [![Bash][Bash-badge]][Bash-url]
-* [![Docker][Docker-badge]][Docker-url]
-* [![Nginx][Nginx-badge]][Nginx-url]
+- [![Python][Python-badge]][Python-url]
+- [![Bash][Bash-badge]][Bash-url]
+- [![Docker][Docker-badge]][Docker-url]
+- [![Nginx][Nginx-badge]][Nginx-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -69,17 +69,17 @@ The project emphasizes security and ease of use, handling everything from firewa
 
 Before running the installation script, ensure you have:
 
-* Ubuntu Server LTS
-* Root or sudo access
-* Active internet connection
-* (Optional) Cloudflare account for DNS and SSL management
+- Ubuntu Server LTS
+- Root or sudo access
+- Active internet connection
+- (Optional) Cloudflare account for DNS and SSL management
 
 ### Installation
 
 Run this command in your Ubuntu terminal to start the installation:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ENIACore/nexus/main/install.py -o /tmp/nexus-install.py && sudo python3 /tmp/nexus-install.py; rm -f /tmp/nexus-install.py
+curl -fsSL https://raw.githubusercontent.com/ENIACore/server-configs/main/install.py -o /tmp/server-install.py && sudo python3 /tmp/server-install.py
 ```
 
 The script will guide you through the setup process and configure all services automatically.
@@ -91,6 +91,7 @@ The script will guide you through the setup process and configure all services a
 The Nexus installation includes the following services and security features:
 
 **Services:**
+
 - **Nextcloud** - Self-hosted file sync and share platform
 - **Vaultwarden** - Lightweight Bitwarden server implementation
 - **Jellyfin** - Media server for your personal media collection
@@ -98,6 +99,7 @@ The Nexus installation includes the following services and security features:
 - **Gluetun VPN** - VPN client container for secure networking
 
 **Security & Infrastructure:**
+
 - **Nginx** - Reverse proxy with SSL termination
 - **Cloudflare DNS & SSL** - Automated certificate management
 - **Fail2ban** - Intrusion prevention system
@@ -150,6 +152,7 @@ Project Link: [https://github.com/ENIACore/nexus](https://github.com/ENIACore/ne
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- MARKDOWN LINKS & IMAGES -->
+
 [contributors-shield]: https://img.shields.io/github/contributors/ENIACore/nexus.svg?style=for-the-badge
 [contributors-url]: https://github.com/ENIACore/nexus/graphs/contributors
 [forks-shield]: https://img.shields.io/github/forks/ENIACore/nexus.svg?style=for-the-badge
