@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
 
-from pathlib import Path
-from subprocess import CompletedProcess
-
-HOME = Path.home()
-USR_BIN = HOME / "bin"
-LIB_DIR = USR_BIN / "_lib"
-SCRIPTS_DIR = Path(__file__).parent.resolve()
-
 # Colors
 RED = "\033[91m"
 GREEN = "\033[92m"
