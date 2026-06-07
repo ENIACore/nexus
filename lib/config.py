@@ -63,6 +63,7 @@ def save_config(data: dict) -> None:
     try:
         SERVER_CONFIG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
         SERVER_CONFIG_FILE_PATH.write_text(json.dumps(data, indent=2) + "\n")
+        SERVER_CONFIG_FILE_PATH.chmod(0o600)
     except OSError as e:
         print_error(f"Failed to write config: {e}")
         sys.exit(1)
