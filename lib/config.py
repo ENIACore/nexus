@@ -20,7 +20,8 @@ from formatting import (
 # Server paths
 SERVER_BIN = "/usr/local/sbin"
 SERVER_ENV_PATH = Path(f"{SERVER_BIN}/source-env")
-SERVER_CONFIG_PATH = Path("/etc/server-config")
+SERVER_CLONE_PATH = Path("/tmp/server-configs")
+SERVER_CONFIG_PATH = Path("/etc/server")
 SERVER_CONFIG_FILE_PATH = SERVER_CONFIG_PATH / "config.json"
 
 # Ubuntu settings

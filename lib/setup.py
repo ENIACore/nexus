@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
 from common import copy_path
 from config import (
+    SERVER_CLONE_PATH,
     SERVER_CONFIG_PATH,
     SERVER_USER,
     get_config_value,
@@ -28,8 +29,6 @@ from formatting import (
     print_success,
     print_warning,
 )
-
-CLONE_PATH = Path("/tmp/server-configs")
 
 
 def create_directories() -> None:
@@ -66,11 +65,11 @@ def create_directories() -> None:
 def copy_template_files():
     print_step("Copying template files to /etc/<service>/<file>.template...")
 
-    keys_path = CLONE_PATH / "keys"
+    keys_path = SERVER_CLONE_PATH / "keys"
     templates = [
         ("/etc/cloudflare", "cloudflare.toml.template"),
         ("/etc/server", "mlm.toml.template"),
-        ("/etc/server-site", "personal-site.toml.template"),
+        (SERVER_CONFIG_PATH, "personal-site.toml.template"),
         ("/etc/server", "wg0.conf.template"),
     ]
 
@@ -132,12 +131,12 @@ def create_config():
 def cleanup():
     print_step("Cleaning up temporary files...")
 
-    if CLONE_PATH.exists():
+    if SERVER_CLONE_PATH.exists():
         try:
-            shutil.rmtree(CLONE_PATH)
-            print_success(f"Removed temporary directory {CLONE_PATH}")
+            shutil.rmtree(SERVER_CLONE_PATH)
+            print_success(f"Removed temporary directory {SERVER_CLONE_PATH}")
         except Exception:
-            print_warning(f"Failed to remove {CLONE_PATH}")
+            print_warning(f"Failed to remove {SERVER_CLONE_PATH}")
 
     script_path = Path(__file__).resolve()
     try:
