@@ -8,3 +8,6 @@ nginx/sites-enabled/**
 
 # Ignore static files, hosted projects should be externally managed
 nginx/www/**
+
+# Local testing python file
+test.py
