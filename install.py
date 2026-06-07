@@ -162,8 +162,8 @@ def cleanup():
 
 
 if __name__ == "__main__":
-    clone_repository()
     run_cmd(f"bash {CLONE_PATH}/lib/install-scripts.py")
+    clone_repository()
     create_directories()
     copy_template_files()
     create_config()
