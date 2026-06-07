@@ -138,7 +138,15 @@ def cleanup():
         except Exception:
             print_warning(f"Failed to remove {SERVER_CLONE_PATH}")
 
+    # Remove self and original install script path
     script_path = Path(__file__).resolve()
+    try:
+        script_path.unlink(missing_ok=True)
+        print_success(f"Removed setup script {script_path}")
+    except Exception:
+        print_warning(f"Failed to remove setup script {script_path}")
+
+    script_path = Path("/tmp/server-install.py")
     try:
         script_path.unlink(missing_ok=True)
         print_success(f"Removed installer script {script_path}")
