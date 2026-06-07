@@ -1,0 +1,14 @@
+# Media Library Manager tool configuration variables
+[
+mlm
+]
+movie_path = "<value>"
+show_path = "<value>"
+manager_path = "<value>"
+torrent_path = "<value>"
+incomplete_path = "<value>"
+tmdb_api_key = "<value>"
+os_api_key = "<value>"
+os_user_agent = "<value>"
+os_user = "<value>"
+os_pass = "<value>"

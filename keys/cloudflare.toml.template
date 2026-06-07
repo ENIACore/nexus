@@ -1,0 +1,6 @@
+# Cloudflare *.<domain>.dev API token
+# To be stored into cloudflare.ini via dns_cloudflare_api_token = <val>
+[
+cloudflare
+]
+api_key = "<value>"

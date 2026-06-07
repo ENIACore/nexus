@@ -9,18 +9,27 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
-from common import run_cmd  # noqa: E402
-from formatting import print_error, print_step, print_success  # noqa: E402
+from common import copy_path, run_cmd  # noqa: E402
+from formatting import (  # noqa: E402
+    RED,
+    RESET,
+    print_group_end,
+    print_group_start,
+    print_group_step,
+    print_step,
+    print_success,
+    print_warning,
+)
 
 REPO_URL = "https://github.com/ENIACore/server-configs.git"
-CLONE_PATH = "/tmp/srvr-install"
+CLONE_PATH = Path("/tmp/srvr-install")
 
 
-def clone_repository():
+def clone_repository() -> Path:
     print_step("Cloning nexus repository...")
 
     # Remove existing clone if present
-    if Path(CLONE_PATH).exists():
+    if CLONE_PATH.exists():
         shutil.rmtree(CLONE_PATH)
 
     run_cmd(f"git clone {REPO_URL} {CLONE_PATH}", True)
@@ -29,190 +38,96 @@ def clone_repository():
     return CLONE_PATH
 
 
-def create_directories():
+def create_directories() -> None:
     print_step("Creating system directories...")
 
     directories = [
-        "/opt/nexus",
-        "/var/log/nexus",
-        "/etc/nexus",
-        "/etc/nexus/keys",
+        "/etc/cloudflare",
+        "/etc/nginx",
+        "/etc/f2b",
+        "/etc/ufw",
+        "/etc/jelly",
+        "/etc/jfa",
+        "/etc/nextcloud",
+        "/etc/jackett",
+        "/etc/vault",
+        "/etc/raid",
+        "/etc/server",
+        "/etc/mc",
     ]
 
+    print_group_start("Creating configuration directories")
     for directory in directories:
         try:
             Path(directory).mkdir(parents=True, exist_ok=True)
-            print_success(f"Created directory: {directory}")
+            print_group_step(f"Created directory: {directory}")
         except Exception as e:
-            print_error(f"Failed to create directory {directory}: {e}")
+            print_group_end(
+                f"Failed to create directory {directory}: {e}", success=False
+            )
             sys.exit(1)
+    print_group_end()
 
 
-"""
+def copy_template_files():
+    print_step("Copying template files to /etc/<service>/<file>.template...")
 
-def copy_repo_path(repo_path):
-    print_step("Copying paths to /opt/nexus...")
-
-    repo_root = Path(repo_path)
-
-    # Define paths to copy: (source_relative_path, destination_relative_path)
-    paths_to_copy = [
-        # Cloudflare files
-        ("cloudflare/setup.sh", "cloudflare/setup.sh"),
-        ("cloudflare/schedule.sh", "cloudflare/schedule.sh"),
-        ("cloudflare/update_dns.sh", "cloudflare/update_dns.sh"),
-        ("cloudflare/create_cert.sh", "cloudflare/create_cert.sh"),
-
-        # Nginx files
-        ("nginx/setup.sh", "nginx/setup.sh"),
-        ("nginx/reload.sh", "nginx/reload.sh"),
-        ("nginx/update.sh", "nginx/update.sh"),
-        ("nginx/tail-logs.sh", "nginx/tail-logs.sh"),
-
-        # Nginx directories
-        ("nginx/conf", "nginx/conf"),
-        ("nginx/conf.d", "nginx/conf.d"),
-        ("nginx/snippets", "nginx/snippets"),
-        ("nginx/sites-available", "nginx/sites-available"),
-        ("nginx/streams-available", "nginx/streams-available"),
-
-        # Fail2ban files
-        ("f2b/setup.sh", "f2b/setup.sh"),
-        ("f2b/reload.sh", "f2b/reload.sh"),
-        ("f2b/status.sh", "f2b/status.sh"),
-
-        # ufw files
-        ("ufw/setup.sh", "ufw/setup.sh"),
-        ("ufw/schedule.sh", "ufw/schedule.sh"),
-        ("ufw/update.sh", "ufw/update.sh"),
-
-        # Jellyfin files
-        ("jelly/setup.sh", "jelly/setup.sh"),
-        ("jelly/schedule.sh", "jelly/schedule.sh"),
-
-        # jfa-go files
-        ("jfa/setup.sh", "jfa/setup.sh"),
-
-        # Nextcloud files
-        ("nextcloud/setup.sh", "nextcloud/setup.sh"),
-
-        # qBittorrent files
-        ("qbit/setup.sh", "qbit/setup.sh"),
-
-        # Jackett files
-        ("jackett/setup.sh", "jackett/setup.sh"),
-
-        # Vaultwarden files
-        ("vault/setup.sh", "vault/setup.sh"),
-
-        # RAID files - Removed RAID support
-        #("RAID/setup.sh", "RAID/setup.sh"),
-        #("RAID/start.sh", "RAID/start.sh"),
-        #("RAID/stop.sh", "RAID/stop.sh"),
-        #("RAID/status.sh", "RAID/status.sh"),
-        #("RAID/restart.sh", "RAID/restart.sh"),
-
-        # Central script files
-        ("lib/checks.sh", "lib/checks.sh"),
-        ("lib/print.sh", "lib/print.sh"),
-        ("lib/log.sh", "lib/log.sh"),
-
-        # Nexus db setup
-        ("db/postgres_setup.sh", "db/postgres_setup.sh"),
-
-        # Personal site setup
-        ("sites/personal_site_setup.sh", "sites/personal_site_setup.sh"),
-
-        # Generic script files for user
-        ("bin/get_ipv4.sh", "bin/get_ipv4.sh"),
-        ("bin/port_scanner.sh", "bin/port_scanner.sh"),
-        ("bin/mask_sleep.sh", "bin/mask_sleep.sh"),
-        ("bin/unmask_sleep.sh", "bin/unmask_sleep.sh"),
-        ("bin/inspect_docker_network.sh", "bin/inspect_docker_network.sh"),
-        ("bin/prune_docker_system.sh", "bin/prune_docker_system.sh"),
-        ("bin/rm_docker_volumes.sh", "bin/rm_docker_volumes.sh"),
-
-        # Minecraft setup
-        ("mc/setup.sh", "mc/setup.sh"),
+    keys_path = CLONE_PATH / "keys"
+    templates = [
+        ("/etc/cloudflare", "cloudflare.toml.template"),
+        ("/etc/server", "mlm.toml.template"),
+        ("/etc/server-site", "personal-site.toml.template"),
+        ("/etc/server", "wg0.conf.template"),
     ]
 
-    for src_rel, dst_rel in paths_to_copy:
-        src = repo_root / src_rel
-        dst = Path("/opt/nexus") / dst_rel
+    print_group_start("Copying template files")
+    for template in templates:
+        src = keys_path / template[1]
+        dest = Path(template[0]) / template[1]
+        copy_path(src, dest)
+        print_group_step(f"Copied template file {template[1]} to {src}")
+    print_group_end(
+        f"{RED} Make sure to fill in values and remove .template tag for all template files{RESET}"
+    )
 
-        if not src.exists():
-            print_warning(f"Source path not found: {src}")
-            continue
 
-        try:
-            dst.parent.mkdir(parents=True, exist_ok=True)
-
-            if src.is_dir():
-                # Copy directory
-                if dst.exists():
-                    shutil.rmtree(dst)
-                shutil.copytree(src, dst)
-                print_success(f"Copied directory {src_rel} -> {dst_rel}")
-            else:
-                # Copy file
-                shutil.copy2(src, dst)
-                print_success(f"Copied file {src_rel} -> {dst_rel}")
-        except Exception as e:
-            print_error(f"Failed to copy {src_rel}: {e}")
-            sys.exit(1)
-
-def copy_template_files(repo_path):
-    print_step("Copying template files to /etc/nexus/keys...")
-
-    repo_root = Path(repo_path)
-    keys_src = repo_root / "keys"
-    keys_dst = Path("/etc/nexus/keys")
-
-    if not keys_src.exists():
-        print_warning(f"Keys directory not found: {keys_src}")
-        return
-
-    # Find all .template files
-    template_files = list(keys_src.glob("*.template"))
-
-    if not template_files:
-        print_warning("No template files found in keys directory")
-        return
-
-    copied_files = []
-    for template_file in template_files:
-        dst_file = keys_dst / template_file.name
-        try:
-            shutil.copy2(template_file, dst_file)
-            # Remove .template extension for the actual config file name
-            config_file = keys_dst / template_file.name.replace('.template', '')
-            copied_files.append(config_file.name)
-            print_success(f"Copied {template_file.name} -> /etc/nexus/keys/")
-        except Exception as e:
-            print_error(f"Failed to copy {template_file.name}: {e}")
-            sys.exit(1)
-
-    # Print required configuration files
-    print_header("REQUIRED CONFIGURATION FILES")
-    print_info("The following template files have been copied to /etc/nexus/keys/")
-    print_info("You must fill out these files with your actual credentials:\n")
-
-    for config_file in sorted(copied_files):
-        print(f"  {Colors.YELLOW}{Colors.BOLD}•{Colors.RESET} {Colors.WHITE}{config_file}{Colors.RESET}")
-
-    print(f"\n{Colors.CYAN}Location: /etc/nexus/keys/{Colors.RESET}")
-    print(f"{Colors.YELLOW}⚠ Remove the .template extension and fill in your credentials{Colors.RESET}\n")
-
-def cleanup_temp_files():
+def cleanup():
     print_step("Cleaning up temporary files...")
 
-    temp_repo = "/tmp/nexus"
-    if Path(temp_repo).exists():
+    if CLONE_PATH.exists():
         try:
-            shutil.rmtree(temp_repo)
-            print_success(f"Removed temporary directory: {temp_repo}")
-        except Exception as e:
-            print_warning(f"Failed to remove {temp_repo}: {e}")
+            shutil.rmtree(CLONE_PATH)
+            print_success(f"Removed temporary directory {CLONE_PATH}")
+        except Exception:
+            print_warning(f"Failed to remove {CLONE_PATH}")
+
+
+def create_config():
+    print_step("Getting values for server configuration")
+
+
+# Nexus domain and subdomains
+# export NEXUS_DOMAIN="{domain}"
+# export NEXUS_WILDCARD_DOMAIN="*.{domain}"
+# export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
+# export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
+# export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
+# export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
+
+# Nexus service user
+# export NEXUS_USER=nexus
+
+# Nexus main log dir
+# export NEXUS_LOG_DIR="/var/log/nexus"
+
+# Nexus main opt and etc dir
+# export NEXUS_OPT_DIR="/opt/nexus"
+# export NEXUS_ETC_DIR="/etc/nexus"
+
+# export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
+# export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
+# export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
+"""
 
 def create_config():
     print_step("Creating configuration file...")
@@ -249,28 +164,6 @@ def create_config():
     # Create config file content
     config_content = f"""  #!/bin/bash
 # Nexus Configuration File - /etc/nexus/conf/conf.sh
-
-# Nexus domain and subdomains
-# export NEXUS_DOMAIN="{domain}"
-# export NEXUS_WILDCARD_DOMAIN="*.{domain}"
-# export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
-# export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
-# export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
-# export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
-
-# Nexus service user
-# export NEXUS_USER=nexus
-
-# Nexus main log dir
-# export NEXUS_LOG_DIR="/var/log/nexus"
-
-# Nexus main opt and etc dir
-# export NEXUS_OPT_DIR="/opt/nexus"
-# export NEXUS_ETC_DIR="/etc/nexus"
-
-# export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
-# export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
-# export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
 
 """
     # Write config file
