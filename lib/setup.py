@@ -119,13 +119,13 @@ def create_config():
     print_info(
         f"Core services are services used daily (minecraft, nextcloud)"
     )
-    set_config_value("ESSENTIAL_SERVICES_PATH", "/mnt/core")
+    set_config_value("CORE_SERVICES_PATH", "/mnt/core")
 
     print_info(f"Setting essential media path (/mnt/media)")
     print_info(
         f"Media services are services used for media hosting (qbittorrent, jellyfin, jackett)"
     )
-    set_config_value("ESSENTIAL_SERVICES_PATH", "/mnt/media")
+    set_config_value("MEDIA_SERVICES_PATH", "/mnt/media")
 
 
 def cleanup():
