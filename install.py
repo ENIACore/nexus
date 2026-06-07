@@ -9,6 +9,7 @@ CLONE_PATH = Path("/tmp/server-configs")
 BOOTSTRAP_SCRIPT = Path("/tmp/server-install-scripts.py")
 RAW_URL = "https://raw.githubusercontent.com/ENIACore/server-configs/main/lib/install-scripts.py"
 
+print("new SCRIPT!")
 subprocess.run(
     ["curl", "-fsSL", RAW_URL, "-o", str(BOOTSTRAP_SCRIPT)], check=True
 )
