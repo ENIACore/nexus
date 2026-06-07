@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
 from common import copy_path
 from config import (
-    CONFIG_PATH,
+    SERVER_CONFIG_PATH,
     SERVER_USER,
     get_config_value,
     prompt_and_save,
@@ -47,7 +47,7 @@ def create_directories() -> None:
         "/etc/vault",
         "/etc/raid",
         "/etc/mc",
-        CONFIG_PATH,
+        SERVER_CONFIG_PATH,
     ]
 
     print_group_start("Creating configuration directories")

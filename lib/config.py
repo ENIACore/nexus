@@ -20,7 +20,8 @@ from formatting import (
 # Server paths
 SERVER_BIN = "/usr/local/sbin"
 SERVER_ENV_PATH = Path(f"{SERVER_BIN}/source-env")
-CONFIG_PATH = Path("/etc/server-config/config.json")
+SERVER_CONFIG_PATH = Path("/etc/server-config")
+SERVER_CONFIG_FILE_PATH = SERVER_CONFIG_PATH / "config.json"
 
 # Ubuntu settings
 SERVER_USER: str = "server"
@@ -33,21 +34,21 @@ DOCKER_NETWORK_GATEWAY: str = "172.18.0.1"
 
 def load_config() -> dict:
     """Load config from disk. Returns empty dict if file does not exist."""
-    if not CONFIG_PATH.exists():
+    if not SERVER_CONFIG_FILE_PATH.exists():
         return {}
     try:
-        return json.loads(CONFIG_PATH.read_text())
+        return json.loads(SERVER_CONFIG_FILE_PATH.read_text())
     except json.JSONDecodeError as e:
         print_error(f"Config file is malformed: {e}")
-        print_error(f"Fix or delete {CONFIG_PATH} and re-run")
+        print_error(f"Fix or delete {SERVER_CONFIG_FILE_PATH} and re-run")
         sys.exit(1)
 
 
 def save_config(data: dict) -> None:
     """Write config dict to disk, creating parent directories if needed."""
     try:
-        CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
-        CONFIG_PATH.write_text(json.dumps(data, indent=2) + "\n")
+        SERVER_CONFIG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SERVER_CONFIG_FILE_PATH.write_text(json.dumps(data, indent=2) + "\n")
     except OSError as e:
         print_error(f"Failed to write config: {e}")
         sys.exit(1)
@@ -106,7 +107,7 @@ def print_config() -> None:
     if not config:
         print_warning("No config found — nothing saved yet")
         return
-    print_group_start(f"Current config ({CONFIG_PATH})")
+    print_group_start(f"Current config ({SERVER_CONFIG_FILE_PATH})")
     for key, value in config.items():
         print_group_step(f"{key} = {value}")
     print_group_end()
@@ -114,8 +115,8 @@ def print_config() -> None:
 
 def clear_config() -> None:
     """Delete the config file entirely."""
-    if CONFIG_PATH.exists():
-        CONFIG_PATH.unlink()
+    if SERVER_CONFIG_FILE_PATH.exists():
+        SERVER_CONFIG_FILE_PATH.unlink()
         print_success("Config cleared")
     else:
         print_warning("No config file to clear")
