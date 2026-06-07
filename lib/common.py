@@ -4,12 +4,10 @@ import sys
 from pathlib import Path
 from subprocess import CompletedProcess
 
-sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
+sys.path.insert(0, "/usr/local/sbin/_lib")
 from formatting import print_error, print_info, print_step, print_success, print_warning
 
-HOME = Path.home()
-USR_BIN = HOME / "bin"
-LIB_DIR = USR_BIN / "_lib"
+SRVR_BIN = "/usr/local/sbin"
 SCRIPTS_DIR = Path(__file__).parent.resolve()
 
 
@@ -30,7 +28,7 @@ def copy_to_clipboard(text):
     return ""
 
 
-SOURCE_ENV_PATH = Path(f"{USR_BIN}/source-env")
+SOURCE_ENV_PATH = Path(f"{SRVR_BIN}/source-env")
 
 
 def _ensure_source_env() -> None:
