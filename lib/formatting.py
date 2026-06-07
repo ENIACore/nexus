@@ -81,6 +81,6 @@ def get_input(prompt, default: str = "") -> str:
         suffix = f" [{default}]: "
     else:
         suffix = ": "
-    full_prompt = f"{CYAN}{BOLD}[INPUT]{RESET} {CYAN}{prompt}{RESET}{suffix}"
+    full_prompt = f"  {BLUE}{BOLD}→{RESET}  {CYAN}{BOLD}[INPUT]{RESET} {CYAN}{prompt}{RESET}{suffix}"
     reply: str = input(full_prompt).strip()
     return reply if reply else default
