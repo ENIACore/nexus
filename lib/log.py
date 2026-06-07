@@ -123,7 +123,3 @@ def _rotate_log() -> None:
         tmp = _NEXUS_LOG_FILE.with_suffix(".tmp")
         tmp.write_text("\n".join(trimmed) + "\n")
         tmp.replace(_NEXUS_LOG_FILE)
-
-
-init_logger("/tmp/test.log")
-log("test log")
