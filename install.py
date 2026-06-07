@@ -1,92 +1,39 @@
 #!/usr/bin/env python3
+
 """
-Nexus Server Installation Script
+Server Installation Script
 """
 
-import sys
-import os
-import subprocess
 import shutil
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
+from common import run_cmd  # noqa: E402
+from formatting import print_error, print_step, print_success  # noqa: E402
 
-class Colors:
-    """ANSI color codes for terminal output"""
-    RED = '\033[91m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    BLUE = '\033[94m'
-    MAGENTA = '\033[95m'
-    CYAN = '\033[96m'
-    WHITE = '\033[97m'
-    RESET = '\033[0m'
-    BOLD = '\033[1m'
+REPO_URL = "https://github.com/ENIACore/server-configs.git"
+CLONE_PATH = "/tmp/srvr-install"
 
 
-def print_error(message):
-    """Print error message in red"""
-    print(f"{Colors.RED}{Colors.BOLD}[ERROR]{Colors.RESET} {Colors.RED}{message}{Colors.RESET}")
+def clone_repository():
+    print_step("Cloning nexus repository...")
 
+    # Remove existing clone if present
+    if Path(CLONE_PATH).exists():
+        shutil.rmtree(CLONE_PATH)
 
-def print_success(message):
-    """Print success message in green"""
-    print(f"{Colors.GREEN}{Colors.BOLD}[SUCCESS]{Colors.RESET} {Colors.GREEN}{message}{Colors.RESET}")
+    run_cmd(f"git clone {REPO_URL} {CLONE_PATH}", True)
+    print_success(f"Repository cloned to {CLONE_PATH}")
 
-
-def print_warning(message):
-    """Print warning message in yellow"""
-    print(f"{Colors.YELLOW}{Colors.BOLD}[WARNING]{Colors.RESET} {Colors.YELLOW}{message}{Colors.RESET}")
-
-
-def print_info(message):
-    """Print info message in blue"""
-    print(f"{Colors.BLUE}{Colors.BOLD}[INFO]{Colors.RESET} {Colors.BLUE}{message}{Colors.RESET}")
-
-
-def print_step(message):
-    """Print step message in cyan"""
-    print(f"{Colors.CYAN}{Colors.BOLD}[STEP]{Colors.RESET} {Colors.CYAN}{message}{Colors.RESET}")
-
-
-def print_header(message):
-    """Print header message in magenta"""
-    print(f"\n{Colors.MAGENTA}{Colors.BOLD}{'=' * 60}{Colors.RESET}")
-    print(f"{Colors.MAGENTA}{Colors.BOLD}{message.center(60)}{Colors.RESET}")
-    print(f"{Colors.MAGENTA}{Colors.BOLD}{'=' * 60}{Colors.RESET}\n")
-
-
-def run_command(command, description=None):
-    """Run a shell command and handle errors"""
-    if description:
-        print_info(description)
-    
-    try:
-        result = subprocess.run(
-            command,
-            shell=True,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        return result.stdout
-    except subprocess.CalledProcessError as e:
-        print_error(f"Command failed: {command}")
-        print_error(f"Error: {e.stderr}")
-        sys.exit(1)
+    return CLONE_PATH
 
 
 def create_directories():
-    """Create necessary system directories"""
     print_step("Creating system directories...")
-    
-    directories = [
-        "/opt/nexus",
-        "/var/log/nexus",
-        "/etc/nexus",
-        "/etc/nexus/keys"
-    ]
-    
+
+    directories = ["/opt/nexus", "/var/log/nexus", "/etc/nexus", "/etc/nexus/keys"]
+
     for directory in directories:
         try:
             Path(directory).mkdir(parents=True, exist_ok=True)
@@ -96,24 +43,9 @@ def create_directories():
             sys.exit(1)
 
 
-def clone_repository():
-    """Clone the nexus repository"""
-    print_step("Cloning nexus repository...")
-    
-    repo_url = "https://github.com/ENIACore/nexus.git"
-    clone_path = "/tmp/nexus"
-    
-    # Remove existing clone if present
-    if Path(clone_path).exists():
-        shutil.rmtree(clone_path)
-    
-    run_command(f"git clone {repo_url} {clone_path}", "Cloning repository...")
-    print_success(f"Repository cloned to {clone_path}")
-    
-    return clone_path
+"""
 
 def copy_repo_path(repo_path):
-    """Copy files or directories from repository to /opt/nexus"""
     print_step("Copying paths to /opt/nexus...")
 
     repo_root = Path(repo_path)
@@ -225,7 +157,6 @@ def copy_repo_path(repo_path):
             sys.exit(1)
 
 def copy_template_files(repo_path):
-    """Copy template files from keys/ to /etc/nexus/keys"""
     print_step("Copying template files to /etc/nexus/keys...")
 
     repo_root = Path(repo_path)
@@ -268,7 +199,6 @@ def copy_template_files(repo_path):
     print(f"{Colors.YELLOW}⚠ Remove the .template extension and fill in your credentials{Colors.RESET}\n")
 
 def cleanup_temp_files():
-    """Remove temporary repository clone"""
     print_step("Cleaning up temporary files...")
 
     temp_repo = "/tmp/nexus"
@@ -280,7 +210,6 @@ def cleanup_temp_files():
             print_warning(f"Failed to remove {temp_repo}: {e}")
 
 def create_config():
-    """Create configuration file with domain settings"""
     print_step("Creating configuration file...")
 
     # Get domain from user
@@ -313,32 +242,32 @@ def create_config():
     config_dir.mkdir(parents=True, exist_ok=True)
 
     # Create config file content
-    config_content = f"""#!/bin/bash
+    config_content = f"""  #!/bin/bash
 # Nexus Configuration File - /etc/nexus/conf/conf.sh
 
 # Nexus domain and subdomains
-export NEXUS_DOMAIN="{domain}"
-export NEXUS_WILDCARD_DOMAIN="*.{domain}"
-export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
-export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
-export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
-export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
+# export NEXUS_DOMAIN="{domain}"
+# export NEXUS_WILDCARD_DOMAIN="*.{domain}"
+# export NEXUS_JELLY_SUBDOMAIN="jelly.{domain}"
+# export NEXUS_QBIT_SUBDOMAIN="qbit.{domain}"
+# export NEXUS_VAULT_SUBDOMAIN="vault.{domain}"
+# export NEXUS_NEXTCLOUD_SUBDOMAIN="nextcloud.{domain}"
 
 # Nexus service user
-export NEXUS_USER=nexus
+# export NEXUS_USER=nexus
 
 # Nexus main log dir
-export NEXUS_LOG_DIR="/var/log/nexus"
+# export NEXUS_LOG_DIR="/var/log/nexus"
 
 # Nexus main opt and etc dir
-export NEXUS_OPT_DIR="/opt/nexus"
-export NEXUS_ETC_DIR="/etc/nexus"
+# export NEXUS_OPT_DIR="/opt/nexus"
+# export NEXUS_ETC_DIR="/etc/nexus"
 
-export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
-export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
-export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
+# export NEXUS_ESSENTIAL_SERVICES_PATH="{essential_services_path}"
+# export NEXUS_CORE_SERVICES_PATH="{core_services_path}"
+# export NEXUS_MEDIA_SERVICES_PATH="{media_services_path}"
+
 """
-
     # Write config file
     config_file = config_dir / "conf.sh"
     config_file.write_text(config_content)
@@ -367,3 +296,4 @@ if __name__ == "__main__":
     cleanup_temp_files()
 
     print_success("Initial setup complete!")
+"""

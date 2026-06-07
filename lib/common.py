@@ -12,7 +12,8 @@ SCRIPTS_DIR = Path(__file__).parent.resolve()
 
 
 def copy_to_clipboard(text):
-    """Copy text to clipboard. Returns the tool used, or empty string if none found."""
+    """Copy text to clipboard.
+    Returns the tool used, or empty string if none found."""
     import shutil
     import subprocess
 
@@ -38,7 +39,8 @@ def _ensure_source_env() -> None:
 
 
 def add_env_val(env_key: str, env_val: str, description: str) -> None:
-    """Append export statements to ~/usr-bin/source-env, creating it if needed."""
+    """Append export statements to ~/usr-bin/source-env,
+    creating it if needed."""
     _ensure_source_env()
     export_line = f"# {description}\nexport {env_key}={env_val}"
     with open(SOURCE_ENV_PATH, "a") as f:
@@ -46,7 +48,9 @@ def add_env_val(env_key: str, env_val: str, description: str) -> None:
     print_info(f"Adding {env_key} to source env")
     print_info(f"Description: {description}")
     print_warning(
-        "Make sure current command is ran with `&& source source-env` or run `source source-env` after for changes to take affect in current sesion"
+        """Make sure current command is ran with `&& source source-env`
+        or run `source source-env` after
+        for changes to take affect in current sesion"""
     )
 
 
@@ -58,7 +62,9 @@ def add_env_cmd(cmd: str, description: str) -> None:
     print_info(f"Adding {cmd} to source env")
     print_info(f"Description: {description}")
     print_warning(
-        "Make sure current command is ran with `&& source source-env` or run `source source-env` after for changes to take affect in current sesion"
+        """Make sure current command is ran with `&& source source-env`
+        or run `source source-env` after
+        for changes to take affect in current sesion"""
     )
 
 
@@ -87,7 +93,47 @@ def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
     else:
         err = result.stderr.strip() if capture_output and result.stderr else ""
         print_error(
-            f"Command failed (exit {result.returncode}){': ' + err if err else ''}"
+            f"""Command failed (exit {result.returncode})
+            {": " + err if err else ""}"""
         )
         result.check_returncode()  # raises CalledProcessError
     return result
+
+
+def copy_path(src: str | Path, dest: str | Path, overwrite: bool = True) -> None:
+    """Recursively copy a file or directory from src to dest.
+
+    Args:
+        src:       Source file or directory path.
+        dest:      Destination path. For directories, this is the target directory
+                   itself (not the parent), mirroring `cp -r src/ dest/`.
+        overwrite: If True (default), replace dest if it already exists.
+                   If False, skip with a warning instead.
+    """
+    import shutil
+
+    src, dest = Path(src), Path(dest)
+
+    if not src.exists():
+        print_error(f"Copy failed: source does not exist: {src}")
+        sys.exit(1)
+
+    if dest.exists():
+        if not overwrite:
+            print_warning(f"Skipping copy: destination already exists: {dest}")
+            return
+        if dest.is_dir():
+            shutil.rmtree(dest)
+        else:
+            dest.unlink()
+
+    print_step(f"Copying {'directory' if src.is_dir() else 'file'}: {src} → {dest}")
+
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    if src.is_dir():
+        shutil.copytree(src, dest)
+    else:
+        shutil.copy2(src, dest)
+
+    print_success(f"Copied: {src} → {dest}")
