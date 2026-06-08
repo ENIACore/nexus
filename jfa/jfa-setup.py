@@ -1,60 +1,54 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
 
-NEXUS_JFA_OPT_DIR="${NEXUS_OPT_DIR}/jfa"
-JFA_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jfa/config"
-JELLY_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/config"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir
+from config import DOCKER_NETWORK_NAME, require_config_value
+from docker import ensure_network, run_container
+from formatting import print_header, print_info, print_step
 
-echo "Jelly config dir is: ${JELLY_CONFIG_DIR}"
 
-print_header "SETTING UP JFA-GO (JELLYFIN ACCOUNT MANAGER)"
+def main():
+    print_header("SETTING UP JFA-GO (JELLYFIN ACCOUNT MANAGER)")
 
-# Ensure base path exists
-require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
+    media_path = require_config_value("MEDIA_SERVICES_PATH")
 
-# Create JFA directories
-print_step "Creating JFA directories"
-mkdir -p "${JFA_CONFIG_DIR}"
+    require_dir(media_path, "Media services path")
 
-# Ensure docker network exists (reuse same as Jellyfin)
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
+    jfa_config_dir = f"{media_path}/jfa/config"
+    jelly_config_dir = f"{media_path}/jelly/config"
 
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net'"
-        exit 1
-    fi
-fi
+    print_info(f"Jellyfin config dir: {jelly_config_dir}")
 
-# Run JFA-Go container
-print_step "Starting JFA-Go container"
-docker run -d \
-    --name jfa-go \
-    --network nexus-net \
-    --volume "${JFA_CONFIG_DIR}:/data" \
-    --volume "${JELLY_CONFIG_DIR}:/jf" \
-    --volume /etc/localtime:/etc/localtime:ro \
-    --restart=unless-stopped \
-    hrfee/jfa-go
+    print_step("Creating JFA directories...")
+    ensure_dir(jfa_config_dir)
 
-#    -p 8056:8056 \
+    ensure_network()
 
-if [ $? -eq 0 ]; then
-    print_success "JFA-Go container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Access JFA-Go at http://localhost:8056"
-    print_info "2. Connect it to your Jellyfin instance (http://jellyfin:8096 on the Docker network)"
-    print_info "3. Configure invite links and user settings"
-else
-    print_error "Failed to start JFA-Go container"
-    exit 1
-fi
+    run_container(
+        name="jfa-go",
+        opts=[
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--volume",
+            f"{jfa_config_dir}:/data",
+            "--volume",
+            f"{jelly_config_dir}:/jf",
+            "--volume",
+            "/etc/localtime:/etc/localtime:ro",
+            "--restart",
+            "unless-stopped",
+            "hrfee/jfa-go",
+        ],
+        notes=[
+            "Access JFA-Go at http://localhost:8056",
+            "Connect it to your Jellyfin instance (http://jellyfin:8096 on the Docker network)",
+            "Configure invite links and user settings",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
