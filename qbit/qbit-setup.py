@@ -16,7 +16,7 @@ from formatting import print_header, print_step
 # container traffic on the docker network bypasses the VPN automatically.
 VPN_LAN_CIDR = "192.168.1.0/24"
 
-WG_CONF_SRC = QBIT_CONFIG_PATH / "/wg0.conf"
+WG_CONF_SRC = QBIT_CONFIG_PATH / "wg0.conf"
 
 
 def main():
