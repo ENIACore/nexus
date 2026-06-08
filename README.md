@@ -171,3 +171,5 @@ Project Link: [https://github.com/ENIACore/nexus](https://github.com/ENIACore/ne
 [Docker-url]: https://www.docker.com/
 [Nginx-badge]: https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white
 [Nginx-url]: https://nginx.org/
+
+@TODO@ - Remove unnecessary subdomain generations in setup (unused). Make MC_OPS and whitelist persistent
