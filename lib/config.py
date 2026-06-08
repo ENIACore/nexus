@@ -114,7 +114,7 @@ def prompt_and_save(
     config[key] = value
     save_config(config)
     if secret:
-        print_success(f"Saved: {key} = ****")
+        print_success(f"Saved: {key} = *****")
     else:
         print_success(f"Saved: {key} = {value}")
     return value

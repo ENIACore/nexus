@@ -85,7 +85,9 @@ def get_group_input(prompt, default: str = "") -> str:
 
 def get_input(prompt, default: str = "", secret: bool = False) -> str:
     """Prompt user for input with optional default. Returns the input string."""
-    if default:
+    if default and secret:
+        suffix = f" [*****]: "
+    elif default:
         suffix = f" [{default}]: "
     else:
         suffix = ": "
