@@ -72,7 +72,6 @@ def copy_template_files():
     keys_path = SERVER_CLONE_PATH / "keys"
     templates = [
         (SERVER_CONFIG_PATH, "mlm.toml.template"),
-        (SERVER_CONFIG_PATH, "personal-site.toml.template"),
         (SERVER_CONFIG_PATH, "wg0.conf.template"),
     ]
 
