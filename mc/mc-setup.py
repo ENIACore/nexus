@@ -1,91 +1,116 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import secrets
+import sys
 
-NEXUS_MC_OPT_DIR="${NEXUS_OPT_DIR}/mc"
-NEXUS_MC_PATH="${NEXUS_CORE_SERVICES_PATH}/mc-data"
-NEXUS_MC_DATA_PATH="${NEXUS_MC_PATH}/data"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir
+from config import DOCKER_NETWORK_NAME, prompt_and_save, require_config_value
+from docker import ensure_network, run_container
+from formatting import print_header, print_info, print_step
 
 # Server settings
-MC_TYPE="FABRIC"
-MC_VERSION="LATEST"
-MC_MEMORY="3G"
-MC_DIFFICULTY="normal"
-MC_MAX_PLAYERS="10"
-MC_VIEW_DISTANCE="10"
-MC_OPS="PWRWHL"
-MC_WHITELIST="PWRWHL,sulalus"
-MC_ENFORCE_WHITELIST="TRUE"
+MC_CONTAINER_NAME = "server-mc"
+MC_TYPE = "FABRIC"
+MC_VERSION = "LATEST"
+MC_MEMORY = "3G"
+MC_DIFFICULTY = "normal"
+MC_MAX_PLAYERS = "10"
+MC_VIEW_DISTANCE = "10"
+MC_ENFORCE_WHITELIST = "TRUE"
+MC_TZ = "America/Chicago"
 
 # Mods (auto-downloaded from Modrinth)
-MC_MODRINTH_PROJECTS="lithium"
+MC_MODRINTH_PROJECTS = "lithium"
 
-print_header "SETTING UP MINECRAFT SERVER (FABRIC + LITHIUM)"
 
-# Ensure core services path exists
-require_dir "${NEXUS_CORE_SERVICES_PATH}" "Core services path"
+def generate_rcon_password(rcon_pass_file: str) -> str:
+    password = secrets.token_hex(16)
+    from pathlib import Path
 
-# Create Minecraft directories
-print_step "Creating Minecraft server directories"
-mkdir -p "${NEXUS_MC_DATA_PATH}"
+    path = Path(rcon_pass_file)
+    path.write_text(password + "\n")
+    path.chmod(0o600)
+    print_info(f"RCON password stored in {rcon_pass_file}")
+    return password
 
-# Generate and store RCON password
-RCON_PASS_FILE="${NEXUS_MC_PATH}/.rcon_password"
-MC_RCON_PASSWORD="$(openssl rand -hex 16)"
-echo "${MC_RCON_PASSWORD}" > "${RCON_PASS_FILE}"
-chmod 600 "${RCON_PASS_FILE}"
-print_info "RCON password stored in ${RCON_PASS_FILE}"
 
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+def main():
+    print_header("SETTING UP MINECRAFT SERVER (FABRIC + LITHIUM)")
 
-# Run itzg/minecraft-server
-print_step "Starting Minecraft server container"
-docker run -d \
-    --name nexus-mc \
-    --network nexus-net \
-    --restart unless-stopped \
-    -e EULA="TRUE" \
-    -e TYPE="${MC_TYPE}" \
-    -e VERSION="${MC_VERSION}" \
-    -e MEMORY="${MC_MEMORY}" \
-    -e DIFFICULTY="${MC_DIFFICULTY}" \
-    -e MAX_PLAYERS="${MC_MAX_PLAYERS}" \
-    -e VIEW_DISTANCE="${MC_VIEW_DISTANCE}" \
-    -e OPS="${MC_OPS}" \
-    -e WHITELIST="${MC_WHITELIST}" \
-    -e ENFORCE_WHITELIST="${MC_ENFORCE_WHITELIST}" \
-    -e TZ="America/Chicago" \
-    -e ENABLE_RCON="true" \
-    -e RCON_PASSWORD="${MC_RCON_PASSWORD}" \
-    -e SERVER_PORT="25565" \
-    -e MODRINTH_PROJECTS="${MC_MODRINTH_PROJECTS}" \
-    -v "${NEXUS_MC_DATA_PATH}":/data \
-    itzg/minecraft-server:latest
-#    -p 25565:25565 \ Now managed by nginx stream
+    core_path = require_config_value("CORE_SERVICES_PATH")
+    require_dir(core_path, "Core services path")
 
-if [ $? -eq 0 ]; then
-    print_success "Minecraft server container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Connect via Minecraft client at <server-ip>:25565"
-    print_info "2. Monitor startup progress: docker logs -f nexus-mc"
-    print_info "3. World data stored in ${NEXUS_MC_DATA_PATH}"
-    print_info "4. RCON password stored in ${RCON_PASS_FILE}"
-else
-    print_error "Failed to start Minecraft server container"
-    exit 1
-fi
+    mc_ops = prompt_and_save(
+        "MC_OPS",
+        "Enter Minecraft operator usernames (comma-separated) — ops can run server commands",
+    )
+    mc_whitelist = prompt_and_save(
+        "MC_WHITELIST",
+        "Enter Minecraft whitelist usernames (comma-separated) — only these players can join",
+    )
+
+    mc_path = f"{core_path}/mc-data"
+    mc_data_path = f"{mc_path}/data"
+    rcon_pass_file = f"{mc_path}/.rcon_password"
+
+    print_step("Creating Minecraft server directories...")
+    ensure_dir(mc_data_path)
+
+    rcon_password = generate_rcon_password(rcon_pass_file)
+
+    ensure_network()
+
+    run_container(
+        name=MC_CONTAINER_NAME,
+        opts=[
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--restart",
+            "unless-stopped",
+            "-e",
+            "EULA=TRUE",
+            "-e",
+            f"TYPE={MC_TYPE}",
+            "-e",
+            f"VERSION={MC_VERSION}",
+            "-e",
+            f"MEMORY={MC_MEMORY}",
+            "-e",
+            f"DIFFICULTY={MC_DIFFICULTY}",
+            "-e",
+            f"MAX_PLAYERS={MC_MAX_PLAYERS}",
+            "-e",
+            f"VIEW_DISTANCE={MC_VIEW_DISTANCE}",
+            "-e",
+            f"OPS={mc_ops}",
+            "-e",
+            f"WHITELIST={mc_whitelist}",
+            "-e",
+            f"ENFORCE_WHITELIST={MC_ENFORCE_WHITELIST}",
+            "-e",
+            f"TZ={MC_TZ}",
+            "-e",
+            "ENABLE_RCON=true",
+            "-e",
+            f"RCON_PASSWORD={rcon_password}",
+            "-e",
+            "SERVER_PORT=25565",
+            "-e",
+            f"MODRINTH_PROJECTS={MC_MODRINTH_PROJECTS}",
+            "-v",
+            f"{mc_data_path}:/data",
+            "itzg/minecraft-server:latest",
+        ],
+        notes=[
+            "Connect via Minecraft client at <server-ip>:25565",
+            f"Monitor startup progress: docker logs -f {MC_CONTAINER_NAME}",
+            f"World data stored in {mc_data_path}",
+            f"RCON password stored in {rcon_pass_file}",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
