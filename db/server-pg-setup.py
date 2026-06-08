@@ -11,7 +11,7 @@ from formatting import print_header, print_success
 PG_CONTAINER_NAME = "server-pg"
 PG_IMAGE = "postgres:latest"
 PG_DATA_VOLUME = "server-pg-data"
-PG_DATA_PATH = "/var/lib/postgresql/data"
+PG_DATA_PATH = "/var/lib/postgresql"
 
 
 def main():
