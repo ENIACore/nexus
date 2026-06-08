@@ -36,6 +36,7 @@ def main():
     print_step(f"Logs will be written to: {CF_LOG_DIR}/dns.log")
 
     print_step("Running initial DNS update...")
+    """
     result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-update-dns")
     if result.returncode != 0:
         print_error("Initial DNS update failed")
@@ -46,6 +47,7 @@ def main():
     if result.returncode != 0:
         print_error("Failed to schedule DNS updates")
         sys.exit(1)
+    """
 
     run_cmd(f"sudo chown -R {SERVER_USER}:{SERVER_USER} {CF_LOG_DIR}")
     run_cmd(f"sudo chmod 755 {CF_LOG_DIR}")
