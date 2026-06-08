@@ -3,9 +3,9 @@ server {
     listen [::]:443 ssl;
     http2 on;
 
-    server_name qbit.lamkin.dev;
+    server_name qbit.${DOMAIN};
 
-    include /etc/nginx/snippets/lamkin-ssl-params.conf;
+    include /etc/nginx/snippets/ssl-params.conf;
 
     #Server security
     include /etc/nginx/snippets/security.conf;

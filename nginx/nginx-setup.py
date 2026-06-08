@@ -28,12 +28,11 @@ def copy_nginx_config() -> None:
         "conf",
         "conf.d",
         "snippets",
-        "sites-available",
-        "streams-available",
+        "templates",
     ]:
         copy_path(NGINX_SRC_PATH / subdir, NGINX_CONFIG_PATH / subdir)
 
-    for subdir in ["sites-enabled", "streams-enabled"]:
+    for subdir in ["sites-available", "sites-enabled", "streams-enabled"]:
         print_step(f"Creating {NGINX_CONFIG_PATH / subdir}...")
         ensure_dir(str(NGINX_CONFIG_PATH / subdir))
 

@@ -2,7 +2,7 @@ server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
-    server_name lamkin.dev www.lamkin.dev;
+    server_name ${DOMAIN} www.${DOMAIN};
 
     client_max_body_size 50M;
 
@@ -12,7 +12,7 @@ server {
 
     # Next.js static assets with aggressive caching
     location /_next/static/ {
-        proxy_pass http://nexus-personal-site:3000;
+        proxy_pass http://server-personal-site:3000;
         include /etc/nginx/snippets/http-proxy-params.conf;
         expires 1y;
         add_header Cache-Control "public, immutable";
@@ -20,7 +20,7 @@ server {
     }
 
     location / {
-        proxy_pass http://nexus-personal-site:3000;
+        proxy_pass http://server-personal-site:3000;
         include /etc/nginx/snippets/http-proxy-params.conf;
     }
 }

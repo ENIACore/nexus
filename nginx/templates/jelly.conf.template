@@ -3,9 +3,9 @@ server {
     listen [::]:443 ssl;
     http2 on;
 
-    server_name jackett.lamkin.dev;
+    server_name jelly.${DOMAIN};
 
-    include /etc/nginx/snippets/lamkin-ssl-params.conf;
+    include /etc/nginx/snippets/ssl-params.conf;
 
     #Server security
     include /etc/nginx/snippets/security.conf;
@@ -20,9 +20,13 @@ server {
     client_max_body_size 0;          # Allow unlimited upload size for media
     client_body_buffer_size 512k;    # Memory buffer for uploads before using disk
     
+    location /socket {
+        proxy_pass http://jellyfin:8096;
+        include /etc/nginx/snippets/ws-proxy-params.conf;
+    }
     
     location / {
-        proxy_pass http://jackett.internal:9117;
+        proxy_pass http://jellyfin:8096;
         include /etc/nginx/snippets/http-proxy-params.conf;
     }
 
