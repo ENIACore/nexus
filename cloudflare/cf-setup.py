@@ -36,12 +36,12 @@ def main():
     print_step(f"Logs will be written to: {CF_LOG_DIR}/dns.log")
 
     print_step("Running initial DNS update...")
-    """
     result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-update-dns")
     if result.returncode != 0:
         print_error("Initial DNS update failed")
         sys.exit(1)
 
+    """
     print_step("Scheduling automated DNS updates...")
     result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-schedule")
     if result.returncode != 0:

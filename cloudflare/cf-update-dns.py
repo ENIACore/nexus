@@ -4,15 +4,15 @@ import json
 import sys
 import urllib.error
 import urllib.request
-from pathlib import Path
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_server_user
+from common import ensure_dir
 from config import require_config_value
-from formatting import print_header
+from formatting import print_error, print_header
 from logger import init_logger, log
 
-CF_LOG_DIR = "/var/log/server/cloudflare"
-CF_LOG_FILE = f"{CF_LOG_DIR}/dns.log"
+CF_LOG_FILE = "dns.log"
 CF_LOG_MAX_LINES = 100
 CF_API_BASE = "https://api.cloudflare.com/client/v4"
 
@@ -46,12 +46,9 @@ def _get_public_ipv4() -> str:
                 return resp.read().decode().strip()
         except Exception:
             continue
-    return ""
 
 
-def _get_record_id(
-    zone_id: str, name: str, api_key: str
-) -> str:
+def _get_record_id(zone_id: str, name: str, api_key: str) -> str:
     resp = _cf_request(
         "GET",
         f"/zones/{zone_id}/dns_records?name={name}&type=A",
@@ -73,7 +70,13 @@ def _update_record(
         "PUT",
         f"/zones/{zone_id}/dns_records/{record_id}",
         api_key,
-        {"type": "A", "name": name, "content": ip, "ttl": 1, "proxied": proxied},
+        {
+            "type": "A",
+            "name": name,
+            "content": ip,
+            "ttl": 1,
+            "proxied": proxied,
+        },
     )
     return bool(resp.get("success"))
 
@@ -81,17 +84,20 @@ def _update_record(
 def main():
     print_header("UPDATING DNS")
 
+    require_server_user()
+
     api_key = require_config_value("CF_API_KEY")
     root_domain = require_config_value("ROOT_DOMAIN")
     wildcard_domain = require_config_value("WILDCARD_DOMAIN")
+    cf_log_dir = require_config_value("CF_LOG_DIR")
 
-    Path(CF_LOG_DIR).mkdir(parents=True, exist_ok=True)
-    init_logger(CF_LOG_FILE, CF_LOG_MAX_LINES)
+    ensure_dir(cf_log_dir)
+    init_logger(f"{cf_log_dir}/{CF_LOG_FILE}", CF_LOG_MAX_LINES)
 
     log("Detecting public IPv4 address...")
     public_ip = _get_public_ipv4()
     if not public_ip:
-        log("ERROR: Could not determine public IP address")
+        print_error("Could not determine public IP address")
         sys.exit(1)
     log(f"Current IPv4 address: {public_ip}")
 
@@ -119,7 +125,9 @@ def main():
     log(f"Wildcard Record ID: {wildcard_record_id}")
 
     log(f"Updating A record for {root_domain} -> {public_ip}")
-    if _update_record(zone_id, root_record_id, root_domain, public_ip, True, api_key):
+    if _update_record(
+        zone_id, root_record_id, root_domain, public_ip, True, api_key
+    ):
         log(f"SUCCESS: Updated {root_domain} to {public_ip}")
     else:
         log(f"ERROR: Failed to update {root_domain}")
