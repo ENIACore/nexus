@@ -1,45 +1,60 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
+from pathlib import Path
 
-print_header "SCHEDULING DAILY UFW BLOCKLIST UPDATE"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import ensure_server_user
+from common import run_cmd, write_lines
+from config import UFW_CONFIG_PATH
+from formatting import (
+    print_error,
+    print_header,
+    print_info,
+    print_step,
+    print_success,
+)
 
-NEXUS_UFW_BL_SCRIPT="${NEXUS_ETC_DIR}/ufw/blocklist.sh"
-NEXUS_UFW_CRON_SCHEDULE="0 5 * * *"
-NEXUS_UFW_CRON_FILE="/etc/cron.d/nexus-ufw-blocklist"
+UFW_BLOCKLIST_SCRIPT = UFW_CONFIG_PATH / "blocklist.sh"
+UFW_CRON_FILE = "/etc/cron.d/server-ufw-blocklist"
+UFW_CRON_SCHEDULE = "0 5 * * *"
 
-# Ensure nexus user exists
-ensure_nexus_user
 
-# Check if cron job already exists
-if [[ -f "${NEXUS_UFW_CRON_FILE}" ]]; then
-    echo "System cron job already exists at ${NEXUS_UFW_CRON_FILE}"
-    exit 1
-fi
+def main():
+    print_header("SCHEDULING DAILY UFW BLOCKLIST UPDATE")
 
-print_step "Creating system cron job at ${NEXUS_UFW_CRON_FILE}..."
+    ensure_server_user()
 
-# Create system cron job that runs as nexus user
-sudo tee "${NEXUS_UFW_CRON_FILE}" > /dev/null << EOF
-# Cloudflare DNS updater - runs as nexus user
-# Updates ufw ip blocklist every morning and on reboot
+    if Path(UFW_CRON_FILE).exists():
+        print_error(f"Cron job already exists at {UFW_CRON_FILE}")
+        sys.exit(1)
 
-SHELL=/bin/bash
-PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+    print_step(f"Creating system cron job at {UFW_CRON_FILE}...")
 
-# Run on boot
-@reboot root ${NEXUS_UFW_BL_SCRIPT}
+    write_lines(
+        UFW_CRON_FILE,
+        [
+            "# UFW IP blocklist updater - runs as root",
+            "# Updates blocklist every morning and on reboot",
+            "",
+            "SHELL=/bin/bash",
+            "PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin",
+            "",
+            "# Run on boot",
+            f"@reboot root {UFW_BLOCKLIST_SCRIPT}",
+            "",
+            "# Run daily at 05:00",
+            f"{UFW_CRON_SCHEDULE} root {UFW_BLOCKLIST_SCRIPT}",
+        ],
+    )
 
-# Run daily - requires root due to commands in blocklist.sh
-${NEXUS_UFW_CRON_SCHEDULE} root ${NEXUS_UFW_BL_SCRIPT}
-EOF
+    run_cmd(f"sudo chmod 644 {UFW_CRON_FILE}")
+    run_cmd(f"sudo chmod 644 {UFW_BLOCKLIST_SCRIPT}")
+    run_cmd(f"sudo chmod +x {UFW_BLOCKLIST_SCRIPT}")
 
-# Set proper permissions for system cron file
-sudo chmod 644 "${NEXUS_UFW_BL_SCRIPT}"
-sudo chmod +x "${NEXUS_UFW_BL_SCRIPT}"
+    print_success(f"Cron job created at {UFW_CRON_FILE}")
+    print_info("UFW blocklist update will run daily at 05:00 as root")
 
-print_info "System cron job created successfully"
-print_info "UFW blocklist update will run daily as user '${NEXUS_USER}'"
+
+if __name__ == "__main__":
+    main()
