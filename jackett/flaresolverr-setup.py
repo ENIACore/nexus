@@ -1,49 +1,42 @@
-#!/bin/bash
-# FlareSolverr is used as a proxy server to bypass Cloudflare protection
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+#!/usr/bin/env python3
 
-NEXUS_FLARESOLVERR_OPT_DIR="${NEXUS_OPT_DIR}/jackett"
+import sys
 
-print_header "SETTING UP FLARESOLVERR"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from config import DOCKER_NETWORK_NAME, require_config_value
+from docker import ensure_network, run_container
+from formatting import print_header
 
-# Ensure media services path exists
-require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
 
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+def main():
+    print_header("SETTING UP FLARESOLVERR")
 
-# Run FlareSolverr container
-print_step "Starting FlareSolverr container"
-docker run -d \
-    --name flaresolverr \
-    --network nexus-net \
-    -e LOG_LEVEL=info \
-    -e TZ=Etc/UTC \
-    --restart=unless-stopped \
-    ghcr.io/flaresolverr/flaresolverr:latest
-# -p 8191:8191 \
+    media_path = require_config_value("MEDIA_SERVICES_PATH")
+    require_dir(media_path, "Media services path")
 
-if [ $? -eq 0 ]; then
-    print_success "FlareSolverr container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. FlareSolverr is accessible to other containers on nexus-net at http://flaresolverr:8191"
-    print_info "2. In Jackett, set the FlareSolverr API URL to http://flaresolverr:8191"
-    print_info "3. Test connectivity with: curl http://flaresolverr:8191/v1"
-else
-    print_error "Failed to start FlareSolverr container"
-    exit 1
-fi
+    ensure_network()
+
+    run_container(
+        name="flaresolverr",
+        opts=[
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "-e",
+            "LOG_LEVEL=info",
+            "-e",
+            "TZ=Etc/UTC",
+            "--restart",
+            "unless-stopped",
+            "ghcr.io/flaresolverr/flaresolverr:latest",
+        ],
+        notes=[
+            f"FlareSolverr is accessible to other containers on {DOCKER_NETWORK_NAME} at http://flaresolverr:8191",
+            "In Jackett, set the FlareSolverr API URL to http://flaresolverr:8191",
+            "Test connectivity with: curl http://flaresolverr:8191/v1",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
