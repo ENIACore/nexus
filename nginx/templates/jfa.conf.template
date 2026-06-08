@@ -5,6 +5,8 @@ server {
 
     server_name jfa.${DOMAIN};
 
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
     include /etc/nginx/snippets/ssl-params.conf;
 
     #Server security

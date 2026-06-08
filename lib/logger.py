@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Logger functionality with rotating logs for Nexus scripts - /opt/nexus/lib/log.py
+# Logger functionality with rotating logs for server scripts - /usr/local/sbin/_lib/logger.py
 
 import sys
 from datetime import datetime
@@ -11,10 +11,10 @@ from formatting import print_error, print_info
 # ------------------------------------------------------------------------------
 # Private State
 # ------------------------------------------------------------------------------
-_NEXUS_LOG_FILE: Path | None = None
-_NEXUS_MAX_LOG_LINES: int = 1000
-_NEXUS_LOG_COUNT: int = 0
-_NEXUS_LOG_INITIALIZED: bool = False
+_SERVER_LOG_FILE: Path | None = None
+_SERVER_MAX_LOG_LINES: int = 1000
+_SERVER_LOG_COUNT: int = 0
+_SERVER_LOG_INITIALIZED: bool = False
 
 
 # ------------------------------------------------------------------------------
@@ -33,10 +33,10 @@ def init_logger(log_file: str, max_lines: int = 1000) -> bool:
         True on success, False on failure
     """
     global \
-        _NEXUS_LOG_FILE, \
-        _NEXUS_MAX_LOG_LINES, \
-        _NEXUS_LOG_COUNT, \
-        _NEXUS_LOG_INITIALIZED
+        _SERVER_LOG_FILE, \
+        _SERVER_MAX_LOG_LINES, \
+        _SERVER_LOG_COUNT, \
+        _SERVER_LOG_INITIALIZED
 
     if not log_file:
         print_error("ERROR: Log file path is required.")
@@ -57,10 +57,10 @@ def init_logger(log_file: str, max_lines: int = 1000) -> bool:
             print_error(f"ERROR: Could not create log directory: {log_dir}")
             return False
 
-    _NEXUS_LOG_FILE = log_path
-    _NEXUS_MAX_LOG_LINES = max_lines
-    _NEXUS_LOG_COUNT = 0
-    _NEXUS_LOG_INITIALIZED = True
+    _SERVER_LOG_FILE = log_path
+    _SERVER_MAX_LOG_LINES = max_lines
+    _SERVER_LOG_COUNT = 0
+    _SERVER_LOG_INITIALIZED = True
     return True
 
 
@@ -73,9 +73,9 @@ def log(message: str = "") -> bool:
     Returns:
         True on success, False if logger not initialized
     """
-    global _NEXUS_LOG_COUNT
+    global _SERVER_LOG_COUNT
 
-    if not _NEXUS_LOG_INITIALIZED:
+    if not _SERVER_LOG_INITIALIZED:
         print_error("ERROR: Logger not initialized. Call init_logger first.")
         return False
 
@@ -84,13 +84,13 @@ def log(message: str = "") -> bool:
 
     print_info(log_entry)
 
-    assert _NEXUS_LOG_FILE is not None
-    with open(_NEXUS_LOG_FILE, "a") as f:
+    assert _SERVER_LOG_FILE is not None
+    with open(_SERVER_LOG_FILE, "a") as f:
         f.write(log_entry + "\n")
 
-    _NEXUS_LOG_COUNT += 1
+    _SERVER_LOG_COUNT += 1
 
-    if _NEXUS_LOG_COUNT % 15 == 0:
+    if _SERVER_LOG_COUNT % 15 == 0:
         _rotate_log()
 
     return True
@@ -102,7 +102,7 @@ def get_log_file() -> str:
     Returns:
         The log file path as a string, or empty string if not initialized
     """
-    return str(_NEXUS_LOG_FILE) if _NEXUS_LOG_FILE else ""
+    return str(_SERVER_LOG_FILE) if _SERVER_LOG_FILE else ""
 
 
 # ------------------------------------------------------------------------------
@@ -112,14 +112,14 @@ def get_log_file() -> str:
 
 def _rotate_log() -> None:
     """Rotate the log file if it exceeds the maximum line count.
-    Keeps only the most recent _NEXUS_MAX_LOG_LINES lines.
+    Keeps only the most recent _SERVER_MAX_LOG_LINES lines.
     """
-    if not _NEXUS_LOG_FILE or not _NEXUS_LOG_FILE.exists():
+    if not _SERVER_LOG_FILE or not _SERVER_LOG_FILE.exists():
         return
 
-    lines = _NEXUS_LOG_FILE.read_text().splitlines()
-    if len(lines) > _NEXUS_MAX_LOG_LINES:
-        trimmed = lines[-_NEXUS_MAX_LOG_LINES:]
-        tmp = _NEXUS_LOG_FILE.with_suffix(".tmp")
+    lines = _SERVER_LOG_FILE.read_text().splitlines()
+    if len(lines) > _SERVER_MAX_LOG_LINES:
+        trimmed = lines[-_SERVER_MAX_LOG_LINES:]
+        tmp = _SERVER_LOG_FILE.with_suffix(".tmp")
         tmp.write_text("\n".join(trimmed) + "\n")
-        tmp.replace(_NEXUS_LOG_FILE)
+        tmp.replace(_SERVER_LOG_FILE)

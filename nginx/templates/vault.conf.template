@@ -5,7 +5,9 @@ server {
 
     server_name vault.${DOMAIN};
 
-    include /etc/nginx/snippets/lamkin-ssl-params.conf;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    include /etc/nginx/snippets/ssl-params.conf;
 
     #Server security
     include /etc/nginx/snippets/security.conf;
