@@ -1,86 +1,91 @@
-#!/bin/bash
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+#!/usr/bin/env python3
 
-NEXUS_F2B_ETC_DIR="${NEXUS_ETC_DIR}/f2b"
-NEXUS_F2B_OPT_DIR="${NEXUS_OPT_DIR}/f2b"
-NEXUS_NGINX_LOG_DIR="${NEXUS_LOG_DIR}/nginx"
+import sys
 
-print_header "CONFIGURING FAIL2BAN FOR NEXUS NGINX"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir, run_cmd, write_lines
+from config import F2B_CONFIG_PATH
+from formatting import print_header, print_info, print_step, print_success
 
-# Ensuring nginx log directory exists
-require_dir "${NEXUS_NGINX_LOG_DIR}" "Nginx log directory for fail2ban monitoring"
+NGINX_LOG_DIR = "/var/log/nginx"
+F2B_JAIL_SRC = F2B_CONFIG_PATH / "jail.local"
+F2B_JAIL_DEST = "/etc/fail2ban/jail.local"
 
-# Installing fail2ban
-print_step "Installing fail2ban"
-if ! command -v fail2ban-client &> /dev/null; then
-    sudo apt update && sudo apt install fail2ban -y
-else
-    print_info "fail2ban already installed"
-fi
 
-# Creating fail2ban configuration directory
-print_step "Creating fail2ban configuration directory at ${NEXUS_F2B_ETC_DIR}"
-mkdir -p "${NEXUS_F2B_ETC_DIR}"
+def install_fail2ban() -> None:
+    result = run_cmd("dpkg -s fail2ban", capture_output=True)
+    if result.returncode == 0:
+        print_info("fail2ban already installed, skipping")
+        return
+    print_step("Installing fail2ban...")
+    run_cmd("sudo apt update && sudo apt install fail2ban -y")
 
-# Generating jail.local with environment variables
-print_step "Generating jail.local configuration"
-cat > "${NEXUS_F2B_OPT_DIR}/jail.local" << EOF
-[DEFAULT]
-bantime = 15m
-findtime = 15m
-maxretry = 5
-banaction = ufw
 
-[sshd]
-enabled = true
-port = 22
+def generate_jail_local() -> None:
+    print_step(f"Generating jail.local at {F2B_JAIL_SRC}...")
+    write_lines(
+        F2B_JAIL_SRC,
+        [
+            "[DEFAULT]",
+            "bantime = 15m",
+            "findtime = 15m",
+            "maxretry = 5",
+            "banaction = ufw",
+            "",
+            "[sshd]",
+            "enabled = true",
+            "port = 22",
+            "",
+            "[nginx-http-auth]",
+            "enabled = true",
+            "mode = aggressive",
+            "backend = auto",
+            f"logpath = {NGINX_LOG_DIR}/*.log",
+            "",
+            "[nginx-bad-request]",
+            "enabled = true",
+            "backend = auto",
+            f"logpath = {NGINX_LOG_DIR}/*.log",
+            "",
+            "[nginx-botsearch]",
+            "enabled = true",
+            "backend = auto",
+            f"logpath = {NGINX_LOG_DIR}/*.log",
+            "",
+            "[nginx-limit-req]",
+            "enabled = true",
+            "backend = auto",
+            f"logpath = {NGINX_LOG_DIR}/*.log",
+        ],
+    )
 
-[nginx-http-auth]
-enabled = true
-mode = aggressive
-backend = auto
-logpath = /var/log/nexus/nginx/*.log
 
-[nginx-bad-request]
-enabled = true
-backend = auto
-logpath = /var/log/nexus/nginx/*.log
+def main():
+    print_header("CONFIGURING FAIL2BAN FOR NGINX")
 
-[nginx-botsearch]
-enabled = true
-backend = auto
-logpath = /var/log/nexus/nginx/*.log
+    require_dir(NGINX_LOG_DIR, "Nginx log directory for fail2ban monitoring")
 
-[nginx-limit-req]
-enabled = true
-backend = auto
-logpath = /var/log/nexus/nginx/*.log
-EOF
+    install_fail2ban()
 
-# Copying latest jail.local file to fail2ban config directory
-print_step "Copying latest jail.local to ${NEXUS_F2B_ETC_DIR}"
-cp "${NEXUS_F2B_OPT_DIR}/jail.local" "${NEXUS_F2B_ETC_DIR}/jail.local"
+    ensure_dir(str(F2B_CONFIG_PATH))
 
-# Creating symlink to system fail2ban directory
-print_step "Creating symlink to system fail2ban configuration"
-sudo ln -sf "${NEXUS_F2B_ETC_DIR}/jail.local" /etc/fail2ban/jail.local
+    generate_jail_local()
 
-# Restarting and enabling fail2ban
-print_step "Restarting fail2ban service"
-sudo systemctl restart fail2ban
-sudo systemctl enable fail2ban
+    print_step(f"Symlinking {F2B_JAIL_SRC} -> {F2B_JAIL_DEST}...")
+    run_cmd(f"sudo ln -sf {F2B_JAIL_SRC} {F2B_JAIL_DEST}")
 
-if [ $? -eq 0 ]; then
-    print_info "Active jails can be checked with: sudo fail2ban-client status"
-    print_info "To update configuration:"
-    print_info "1. Edit ${NEXUS_F2B_ETC_DIR}/jail.local"
-    print_info "2. Run ${NEXUS_F2B_OPT_DIR}/reload.sh to apply changes"
-    print_info ""
-    print_success "fail2ban configured successfully"
-else
-    print_error "Failed to configure fail2ban"
-    exit 1
-fi
+    print_step("Restarting and enabling fail2ban...")
+    run_cmd("sudo systemctl restart fail2ban")
+    run_cmd("sudo systemctl enable fail2ban")
+
+    print_success("fail2ban configured successfully")
+    print_info("")
+    print_info("Next steps:")
+    print_info(f"  - Check active jails: sudo fail2ban-client status")
+    print_info(f"  - Edit config:        {F2B_JAIL_SRC}")
+    print_info(f"  - Reload changes:     sudo systemctl reload fail2ban")
+
+
+if __name__ == "__main__":
+    main()
