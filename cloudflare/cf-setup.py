@@ -41,13 +41,11 @@ def main():
         print_error("Initial DNS update failed")
         sys.exit(1)
 
-    """
     print_step("Scheduling automated DNS updates...")
     result = run_cmd(f"{sys.executable} /usr/local/sbin/cf-schedule")
     if result.returncode != 0:
         print_error("Failed to schedule DNS updates")
         sys.exit(1)
-    """
 
     run_cmd(f"sudo chown -R {SERVER_USER}:{SERVER_USER} {CF_LOG_DIR}")
     run_cmd(f"sudo chmod 755 {CF_LOG_DIR}")
