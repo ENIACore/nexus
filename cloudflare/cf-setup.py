@@ -19,6 +19,7 @@ def main():
     CF_API_KEY = prompt_and_save(
         "CF_API_KEY",
         "Input API key for cloudflare, no input to keep current value",
+        secret=True,
     )
     CF_INI_PATH = CF_CONFIG_PATH / "cloudflare.ini"
     write_lines(CF_INI_PATH, [f"dns_cloudflare_api_token = {CF_API_KEY}"])

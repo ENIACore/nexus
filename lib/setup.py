@@ -133,6 +133,7 @@ def create_config():
     prompt_and_save(
         "CF_API_KEY",
         "Enter the Cloudflare Bearer API token for DNS updates",
+        secret=True,
     )
 
     print_info(f"Setting CF_CONFIG_PATH ({CF_CONFIG_PATH})")
