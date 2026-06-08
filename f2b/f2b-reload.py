@@ -33,11 +33,8 @@ def main():
 
     require_file(str(F2B_JAIL_SRC), "fail2ban configuration file")
 
-    print_step(f"Copying latest jail.local to {F2B_CONFIG_PATH}")
-    run_cmd(f"sudo cp {F2B_JAIL_SRC} {F2B_CONFIG_PATH}/jail.local")
-
     print_step("Ensuring symlink to system fail2ban configuration")
-    run_cmd(f"sudo ln -sf {F2B_CONFIG_PATH}/jail.local {F2B_JAIL_DEST}")
+    run_cmd(f"sudo ln -sf {F2B_JAIL_SRC} {F2B_JAIL_DEST}")
 
     print_step("Restarting fail2ban service")
     run_cmd("sudo systemctl restart fail2ban")
