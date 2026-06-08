@@ -1,60 +1,56 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
 
-NEXUS_JELLY_OPT_DIR="${NEXUS_OPT_DIR}/jelly"
-JELLY_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/config"
-JELLY_CACHE_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/cache"
-JELLY_MEDIA_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jelly/media"
-
-print_header "SETTING UP JELLYFIN MEDIA SERVER"
-
-# Ensure media services path exists
-require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
-
-# Create jellyfin directories
-print_step "Creating Jellyfin directories"
-mkdir -p "${JELLY_CONFIG_DIR}"
-mkdir -p "${JELLY_CACHE_DIR}"
-mkdir -p "${JELLY_MEDIA_DIR}"
-
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir
+from config import DOCKER_NETWORK_NAME, require_config_value
+from docker import ensure_network, run_container
+from formatting import print_header, print_step
 
 
-# Run Jellyfin container
-print_step "Starting Jellyfin container"
-docker run -d \
-    --name jellyfin \
-    --network nexus-net \
-    --volume "${JELLY_CONFIG_DIR}:/config" \
-    --volume "${JELLY_CACHE_DIR}:/cache" \
-    --mount type=bind,source="${JELLY_MEDIA_DIR}",target=/media \
-    --restart=unless-stopped \
-    jellyfin/jellyfin:latest
+def main():
+    print_header("SETTING UP JELLYFIN MEDIA SERVER")
 
-if [ $? -eq 0 ]; then
-    print_success "Jellyfin container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Access Jellyfin at ${NEXUS_JELLY_SUBDOMAIN} if configured"
-    print_info "2. Add media files to ${JELLY_MEDIA_DIR}"
-    print_info "Note: --net=host can be used to enable DLNA (device discovery) if needed"
-else
-    print_error "Failed to start Jellyfin container"
-    exit 1
-fi
+    media_path = require_config_value("MEDIA_SERVICES_PATH")
+    jelly_subdomain = require_config_value("JELLY_SUBDOMAIN")
+
+    require_dir(media_path, "Media services path")
+
+    jelly_config_dir = f"{media_path}/jelly/config"
+    jelly_cache_dir = f"{media_path}/jelly/cache"
+    jelly_media_dir = f"{media_path}/jelly/media"
+
+    print_step("Creating Jellyfin directories...")
+    ensure_dir(jelly_config_dir)
+    ensure_dir(jelly_cache_dir)
+    ensure_dir(jelly_media_dir)
+
+    ensure_network()
+
+    run_container(
+        name="jellyfin",
+        opts=[
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--volume",
+            f"{jelly_config_dir}:/config",
+            "--volume",
+            f"{jelly_cache_dir}:/cache",
+            "--mount",
+            f"type=bind,source={jelly_media_dir},target=/media",
+            "--restart",
+            "unless-stopped",
+            "jellyfin/jellyfin:latest",
+        ],
+        notes=[
+            f"Access Jellyfin at {jelly_subdomain} if nginx is configured",
+            f"Add media files to {jelly_media_dir}",
+            "Use --net=host instead of --network to enable DLNA device discovery if needed",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
