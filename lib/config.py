@@ -98,21 +98,25 @@ def require_config_value(key: str) -> str:
     return value
 
 
-def prompt_and_save(key: str, prompt: str, default: str = "") -> str:
+def prompt_and_save(
+    key: str, prompt: str, default: str = "", secret: bool = False
+) -> str:
     """Prompt user for a value, save it to config, and return it.
-
     Always prompts — use ensure_config_value() to skip if already set.
     Uses the current saved value as the default if no default provided.
     """
     config = load_config()
     effective_default = default or config.get(key, "")
-    value = get_input(prompt, default=effective_default)
+    value = get_input(prompt, default=effective_default, secret=secret)
     if not value:
         print_error(f"No value provided for '{key}'")
         sys.exit(1)
     config[key] = value
     save_config(config)
-    print_success(f"Saved: {key} = {value}")
+    if secret:
+        print_success(f"Saved: {key} = ****")
+    else:
+        print_success(f"Saved: {key} = {value}")
     return value
 
 

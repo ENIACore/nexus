@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import getpass
+
 # Colors
 RED = "\033[91m"
 GREEN = "\033[92m"
@@ -14,11 +16,15 @@ GREY = "\033[90m"
 
 
 def print_error(msg):
-    print(f"  {BLUE}{BOLD}→{RESET}  {RED}{BOLD}[ERROR]{RESET}  {RED}{msg}{RESET}")
+    print(
+        f"  {BLUE}{BOLD}→{RESET}  {RED}{BOLD}[ERROR]{RESET}  {RED}{msg}{RESET}"
+    )
 
 
 def print_success(msg):
-    print(f"  {BLUE}{BOLD}→{RESET}  {GREEN}{BOLD}[SUCCESS]{RESET}  {GREEN}{msg}{RESET}")
+    print(
+        f"  {BLUE}{BOLD}→{RESET}  {GREEN}{BOLD}[SUCCESS]{RESET}  {GREEN}{msg}{RESET}"
+    )
 
 
 def print_warning(msg):
@@ -28,11 +34,15 @@ def print_warning(msg):
 
 
 def print_info(msg):
-    print(f"  {BLUE}{BOLD}→{RESET}  {BLUE}{BOLD}[INFO]{RESET}  {BLUE}{msg}{RESET}")
+    print(
+        f"  {BLUE}{BOLD}→{RESET}  {BLUE}{BOLD}[INFO]{RESET}  {BLUE}{msg}{RESET}"
+    )
 
 
 def print_step(msg):
-    print(f"  {BLUE}{BOLD}→{RESET}  {CYAN}{BOLD}[STEP]{RESET}  {CYAN}{msg}{RESET}")
+    print(
+        f"  {BLUE}{BOLD}→{RESET}  {CYAN}{BOLD}[STEP]{RESET}  {CYAN}{msg}{RESET}"
+    )
 
 
 def print_header(msg):
@@ -68,19 +78,20 @@ def get_group_input(prompt, default: str = "") -> str:
         suffix = f" [{default}]: "
     else:
         suffix = ": "
-    full_prompt = (
-        f"  {BLUE}│{RESET}  {CYAN}{BOLD}[INPUT]{RESET} {CYAN}{prompt}{RESET}{suffix}"
-    )
+    full_prompt = f"  {BLUE}│{RESET}  {CYAN}{BOLD}[INPUT]{RESET} {CYAN}{prompt}{RESET}{suffix}"
     reply: str = input(full_prompt).strip()
     return reply if reply else default
 
 
-def get_input(prompt, default: str = "") -> str:
+def get_input(prompt, default: str = "", secret: bool = False) -> str:
     """Prompt user for input with optional default. Returns the input string."""
     if default:
         suffix = f" [{default}]: "
     else:
         suffix = ": "
     full_prompt = f"  {BLUE}{BOLD}→{RESET}  {CYAN}{BOLD}[INPUT]{RESET} {CYAN}{prompt}{RESET}{suffix}"
-    reply: str = input(full_prompt).strip()
+    if secret:
+        reply: str = getpass.getpass(full_prompt).strip()
+    else:
+        reply: str = input(full_prompt).strip()
     return reply if reply else default
