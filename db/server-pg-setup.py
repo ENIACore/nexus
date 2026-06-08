@@ -8,7 +8,7 @@ from config import DOCKER_NETWORK_NAME, prompt_and_save, require_config_value
 from docker import ensure_network, run_container
 from formatting import print_header, print_success
 
-PG_CONTAINER_NAME = "nexus-pg"
+PG_CONTAINER_NAME = "server-pg"
 PG_IMAGE = "postgres:latest"
 PG_DATA_VOLUME = "nexus-pg-data"
 PG_DATA_PATH = "/var/lib/postgresql/data"
