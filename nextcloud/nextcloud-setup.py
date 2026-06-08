@@ -1,64 +1,66 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
 
-NEXUS_NEXTCLOUD_OPT_DIR="${NEXUS_OPT_DIR}/nextcloud"
-NEXUS_NEXTCLOUD_DATA_DIR="${NEXUS_CORE_SERVICES_PATH}/nextcloud-data"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir
+from config import DOCKER_NETWORK_NAME, require_config_value
+from docker import ensure_network, run_container
+from formatting import print_header, print_info, print_step
 
-print_header "SETTING UP NEXTCLOUD ALL-IN-ONE"
 
-# Ensure core services path exists
-require_dir "${NEXUS_CORE_SERVICES_PATH}" "Core services path"
+def main():
+    print_header("SETTING UP NEXTCLOUD ALL-IN-ONE")
 
-# Create nextcloud data directory
-print_step "Creating Nextcloud data directory at ${NEXUS_NEXTCLOUD_DATA_DIR}"
-mkdir -p "${NEXUS_NEXTCLOUD_DATA_DIR}"
+    core_path = require_config_value("CORE_SERVICES_PATH")
+    require_dir(core_path, "Core services path")
 
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
+    nextcloud_data_dir = f"{core_path}/nextcloud-data"
 
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+    print_step(
+        f"Creating Nextcloud data directory at {nextcloud_data_dir}..."
+    )
+    ensure_dir(nextcloud_data_dir)
 
-# Run Nextcloud AIO master container
-print_step "Starting Nextcloud AIO master container"
-print_info "Using beta version due to breaking release"
-print_info "See https://github.com/nextcloud/all-in-one#how-to-switch-the-channel to switch back to latest"
+    ensure_network()
 
-docker run -d \
-    --init \
-    --sig-proxy=false \
-    --network nexus-net \
-    --name nextcloud-aio-mastercontainer \
-    --restart always \
-    --env APACHE_PORT=11000 \
-    --env APACHE_IP_BINDING=0.0.0.0 \
-    --env APACHE_ADDITIONAL_NETWORK="nexus-net" \
-    --env SKIP_DOMAIN_VALIDATION=true \
-    --env NEXTCLOUD_DATADIR="${NEXUS_NEXTCLOUD_DATA_DIR}" \
-    --volume nextcloud_aio_mastercontainer:/mnt/docker-aio-config \
-    --volume /var/run/docker.sock:/var/run/docker.sock:ro \
-    ghcr.io/nextcloud-releases/all-in-one:latest
+    print_info(
+        "Using latest release — see https://github.com/nextcloud/all-in-one#how-to-switch-the-channel to change channel"
+    )
 
-if [ $? -eq 0 ]; then
-    print_success "Nextcloud AIO master container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Access Nextcloud AIO at https://<server-ip>:11000 (NOT the subdomain) (nginx must proxy to AIO container)"
-    print_info "2. Complete the initial setup through the web interface"
-    print_info "3. Data will be stored in ${NEXUS_NEXTCLOUD_DATA_DIR}"
-else
-    print_error "Failed to start Nextcloud AIO master container"
-    exit 1
-fi
+    run_container(
+        name="nextcloud-aio-mastercontainer",
+        opts=[
+            "--init",
+            "--sig-proxy=false",
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--restart",
+            "always",
+            "--env",
+            "APACHE_PORT=11000",
+            "--env",
+            "APACHE_IP_BINDING=0.0.0.0",
+            "--env",
+            f"APACHE_ADDITIONAL_NETWORK={DOCKER_NETWORK_NAME}",
+            "--env",
+            "SKIP_DOMAIN_VALIDATION=true",
+            "--env",
+            f"NEXTCLOUD_DATADIR={nextcloud_data_dir}",
+            "--volume",
+            "nextcloud_aio_mastercontainer:/mnt/docker-aio-config",
+            "--volume",
+            "/var/run/docker.sock:/var/run/docker.sock:ro",
+            "ghcr.io/nextcloud-releases/all-in-one:latest",
+        ],
+        notes=[
+            "Access Nextcloud AIO at https://<server-ip>:11000 (NOT the subdomain — nginx must proxy to the AIO container)",
+            "Complete the initial setup through the web interface",
+            f"Data will be stored in {nextcloud_data_dir}",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
