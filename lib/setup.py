@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path.home() / "bin" / "_lib"))
-from common import copy_path, ensure_dir
+from common import copy_path, ensure_dir, write_lines
 from config import (
     CF_CONFIG_PATH,
     F2B_CONFIG_PATH,
@@ -27,6 +27,7 @@ from config import (
     VAULT_CONFIG_PATH,
     get_config_value,
     prompt_and_save,
+    require_config_value,
     set_config_value,
 )
 from formatting import (
@@ -161,6 +162,38 @@ def create_config():
     set_config_value("SERVER_CONFIG_PATH", str(SERVER_CONFIG_PATH))
 
 
+def process_templates(root_domain: str) -> None:
+    """
+    Substitutes domain into template files and moves them to /etc/nginx/sites-available for future use
+    """
+    template_dir = SERVER_CLONE_PATH / "nginx/templates"
+    sites_available = NGINX_CONFIG_PATH / "sites-available"
+
+    ensure_dir(str(sites_available))
+
+    for template in template_dir.glob("*.template"):
+        dest_name = template.name.replace(".template", "")
+        dest = sites_available / dest_name
+        text = template.read_text().replace("${DOMAIN}", root_domain)
+        write_lines(dest, text.splitlines())
+        print_success(f"Processed template: {template.name} → {dest_name}")
+
+
+def copy_nginx_config() -> None:
+    """
+    Copies all relevant nginx config files into /etc/nginx for future use
+    """
+    nginx_src_path = SERVER_CLONE_PATH / "nginx"
+
+    print_step(f"Copying nginx configuration to {NGINX_CONFIG_PATH}...")
+    for subdir in ["conf", "conf.d", "snippets", "streams-available"]:
+        copy_path(nginx_src_path / subdir, NGINX_CONFIG_PATH / subdir)
+
+    for subdir in ["sites-enabled", "streams-enabled"]:
+        print_step(f"Creating {NGINX_CONFIG_PATH / subdir}...")
+        ensure_dir(str(NGINX_CONFIG_PATH / subdir))
+
+
 def cleanup():
     print_step("Cleaning up temporary files...")
 
@@ -191,4 +224,7 @@ if __name__ == "__main__":
     create_directories()
     copy_template_files()
     create_config()
+    root_domain = require_config_value("ROOT_DOMAIN")
+    process_templates(root_domain)
+    copy_nginx_config()
     cleanup()
