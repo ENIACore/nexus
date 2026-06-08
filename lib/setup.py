@@ -19,6 +19,7 @@ from config import (
     MC_CONFIG_PATH,
     NEXTCLOUD_CONFIG_PATH,
     NGINX_CONFIG_PATH,
+    QBIT_CONFIG_PATH,
     RAID_CONFIG_PATH,
     SERVER_CLONE_PATH,
     SERVER_CONFIG_PATH,
@@ -59,6 +60,7 @@ def create_directories() -> None:
         RAID_CONFIG_PATH,
         MC_CONFIG_PATH,
         SERVER_CONFIG_PATH,
+        QBIT_CONFIG_PATH,
     ]
 
     print_step("Creating configuration directories")
@@ -73,7 +75,7 @@ def copy_template_files():
     keys_path = SERVER_CLONE_PATH / "keys"
     templates = [
         (SERVER_CONFIG_PATH, "mlm.toml.template"),
-        (SERVER_CONFIG_PATH, "wg0.conf.template"),
+        (QBIT_CONFIG_PATH, "wg0.conf.template"),
     ]
 
     print_group_start("Copying template files")

@@ -36,6 +36,7 @@ JACKETT_CONFIG_PATH = Path("/etc/jackett")
 VAULT_CONFIG_PATH = Path("/etc/vault")
 RAID_CONFIG_PATH = Path("/etc/raid")
 MC_CONFIG_PATH = Path("/etc/mc")
+QBIT_CONFIG_PATH = Path("/etc/qbit")
 
 # Ubuntu settings
 SERVER_USER: str = "server"
