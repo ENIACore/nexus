@@ -3,7 +3,6 @@
 import sys
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
-from checks import require_dir
 from common import ensure_dir, run_cmd, write_lines
 from config import F2B_CONFIG_PATH
 from formatting import print_header, print_info, print_step, print_success
@@ -64,7 +63,7 @@ def generate_jail_local() -> None:
 def main():
     print_header("CONFIGURING FAIL2BAN FOR NGINX")
 
-    require_dir(NGINX_LOG_DIR, "Nginx log directory for fail2ban monitoring")
+    ensure_dir(str(NGINX_LOG_DIR))
 
     install_fail2ban()
 
