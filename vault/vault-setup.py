@@ -1,96 +1,102 @@
-#!/bin/bash
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+#!/usr/bin/env python3
 
-NEXUS_VAULT_OPT_DIR="${NEXUS_OPT_DIR}/vault"
-NEXUS_VAULT_DATA_DIR="${NEXUS_ESSENTIAL_SERVICES_PATH}/vw-data"
+import base64
+import secrets
+import subprocess
+import sys
 
-print_header "SETTING UP VAULTWARDEN PASSWORD MANAGER"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import ensure_packages, require_dir
+from common import ensure_dir
+from config import DOCKER_NETWORK_NAME, require_config_value
+from docker import ensure_network, run_container
+from formatting import (
+    print_error,
+    print_header,
+    print_info,
+    print_step,
+)
 
-# Ensure essential services path exists
-require_dir "${NEXUS_ESSENTIAL_SERVICES_PATH}" "Essential services path"
+VAULT_ADMIN_PASS_FILE = ".admin_password"
 
-# Create vaultwarden data directory
-print_step "Creating Vaultwarden data directory at ${NEXUS_VAULT_DATA_DIR}"
-mkdir -p "${NEXUS_VAULT_DATA_DIR}"
 
-# Ensure argon2 is installed
-if ! command -v argon2 >/dev/null 2>&1; then
-    print_step "Installing argon2"
-    if command -v apt-get >/dev/null 2>&1; then
-        apt-get update -qq && apt-get install -y argon2
-    elif command -v dnf >/dev/null 2>&1; then
-        dnf install -y argon2
-    elif command -v yum >/dev/null 2>&1; then
-        yum install -y argon2
-    elif command -v pacman >/dev/null 2>&1; then
-        pacman -S --noconfirm argon2
-    else
-        print_error "No supported package manager found to install argon2"
-        exit 1
-    fi
+def generate_admin_token() -> tuple[str, str]:
+    """Generate a random admin password and its argon2id PHC hash.
 
-    if ! command -v argon2 >/dev/null 2>&1; then
-        print_error "argon2 installation failed"
-        exit 1
-    fi
-fi
+    Returns:
+        (plaintext_password, argon2id_phc_hash)
+    """
+    password = base64.b64encode(secrets.token_bytes(36)).decode()
+    salt = base64.b64encode(secrets.token_bytes(24)).decode()
 
-# Generate admin password (this is what you'll type at the login prompt)
-print_step "Generating Vaultwarden admin password"
-ADMIN_PASSWORD=$(openssl rand -base64 48)
+    # Bitwarden defaults: m=65540 (64MiB), t=3, p=4
+    result = subprocess.run(
+        ["argon2", salt, "-e", "-id", "-k", "65540", "-t", "3", "-p", "4"],
+        input=password.encode(),
+        capture_output=True,
+    )
 
-# Generate argon2id PHC hash of the password (Bitwarden defaults: m=64MiB, t=3, p=4)
-print_step "Hashing admin password with argon2id"
-ADMIN_TOKEN=$(echo -n "${ADMIN_PASSWORD}" | argon2 "$(openssl rand -base64 32)" -e -id -k 65540 -t 3 -p 4)
+    if result.returncode != 0 or not result.stdout.strip():
+        print_error("Failed to generate argon2id PHC string")
+        sys.exit(1)
 
-if [ -z "${ADMIN_TOKEN}" ]; then
-    print_error "Failed to generate argon2id PHC string"
-    exit 1
-fi
+    token = result.stdout.strip().decode()
+    return password, token
 
-# Save the plaintext password (NOT the hash) since that's what you log in with
-ADMIN_PASS_FILE="${NEXUS_VAULT_DATA_DIR}/.admin_password"
-echo "${ADMIN_PASSWORD}" > "${ADMIN_PASS_FILE}"
-chmod 600 "${ADMIN_PASS_FILE}"
-print_info "Admin password saved to ${ADMIN_PASS_FILE} (keep this safe!)"
 
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+def save_admin_password(vault_data_dir: str, password: str) -> str:
+    from pathlib import Path
 
-# Run Vaultwarden container
-# Note: ADMIN_TOKEN here is the argon2id PHC hash, not the plaintext password.
-# Passing via -e avoids the docker-compose $$ escaping issue entirely.
-print_step "Starting Vaultwarden container"
-docker run -d \
-    --name vaultwarden \
-    --network nexus-net \
-    --env DOMAIN="https://${NEXUS_VAULT_SUBDOMAIN}" \
-    --env ADMIN_TOKEN="${ADMIN_TOKEN}" \
-    --volume "${NEXUS_VAULT_DATA_DIR}:/data/" \
-    --restart unless-stopped \
-    vaultwarden/server:latest
+    pass_file = Path(vault_data_dir) / VAULT_ADMIN_PASS_FILE
+    pass_file.write_text(password + "\n")
+    pass_file.chmod(0o600)
+    print_info(f"Admin password saved to {pass_file} (keep this safe!)")
+    return str(pass_file)
 
-if [ $? -eq 0 ]; then
-    print_success "Vaultwarden container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Access the admin panel at https://${NEXUS_VAULT_SUBDOMAIN}/admin"
-    print_info "2. Use the password stored in ${ADMIN_PASS_FILE} to log in"
-    print_info "3. Data will be stored in ${NEXUS_VAULT_DATA_DIR}"
-else
-    print_error "Failed to start Vaultwarden container"
-    exit 1
-fi
+
+def main():
+    print_header("SETTING UP VAULTWARDEN PASSWORD MANAGER")
+
+    essential_path = require_config_value("ESSENTIAL_SERVICES_PATH")
+    vault_subdomain = require_config_value("VAULT_SUBDOMAIN")
+
+    require_dir(essential_path, "Essential services path")
+
+    vault_data_dir = f"{essential_path}/vw-data"
+
+    print_step(f"Creating Vaultwarden data directory at {vault_data_dir}...")
+    ensure_dir(vault_data_dir)
+
+    ensure_packages(["argon2"])
+
+    print_step("Generating Vaultwarden admin password and argon2id token...")
+    admin_password, admin_token = generate_admin_token()
+    pass_file = save_admin_password(vault_data_dir, admin_password)
+
+    ensure_network()
+
+    run_container(
+        name="vaultwarden",
+        opts=[
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--env",
+            f"DOMAIN=https://{vault_subdomain}",
+            "--env",
+            f"ADMIN_TOKEN={admin_token}",
+            "--volume",
+            f"{vault_data_dir}:/data/",
+            "--restart",
+            "unless-stopped",
+            "vaultwarden/server:latest",
+        ],
+        notes=[
+            f"Access the admin panel at https://{vault_subdomain}/admin",
+            f"Use the password stored in {pass_file} to log in",
+            f"Data will be stored in {vault_data_dir}",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
