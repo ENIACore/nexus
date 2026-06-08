@@ -1,115 +1,198 @@
-#!/bin/bash
-# Used to add Jackett credentials to /config/data/nova3/engines/jackett.json in qbittorrent
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+#!/usr/bin/env python3
 
-NEXUS_JACKETT_OPT_DIR="${NEXUS_OPT_DIR}/jackett"
-QBIT_CONTAINER_NAME="qbittorrent"
-JACKETT_CONFIG_PATH_IN_QBIT="/config/data/nova3/engines/jackett.json"
-JACKETT_URL="http://jackett.internal:9117"
+import json
+import re
+import subprocess
+import sys
 
-print_header "SETTING UP JACKETT/QBITTORRENT SEARCH PLUGIN CONFIG"
-
-# Ensure media services path exists
-require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
-
-# Verify qBittorrent container is running
-print_step "Checking qBittorrent container status"
-if ! docker ps --format '{{.Names}}' | grep -q "^${QBIT_CONTAINER_NAME}$"; then
-    print_error "qBittorrent container '${QBIT_CONTAINER_NAME}' is not running"
-    print_error "Start it before running this script"
-    exit 1
-fi
-print_success "qBittorrent container is running"
-
-# Verify Jackett container is running (warn only — config can still be written)
-if ! docker ps --format '{{.Names}}' | grep -q "^jackett$"; then
-    print_warning "Jackett container is not running — config will be written, but searches will fail until it is started"
-fi
-
-# Prompt for Jackett API key
-print_step "Enter Jackett API key (from the top-right of the Jackett web UI)"
-while true; do
-    prompt_input "Jackett API key" ""
-    JACKETT_API_KEY="${REPLY}"
-
-    if [[ -z "${JACKETT_API_KEY}" ]]; then
-        print_warning "API key cannot be empty, please try again"
-        continue
-    fi
-
-    # Jackett API keys are 32-character alphanumeric strings
-    if [[ ! "${JACKETT_API_KEY}" =~ ^[a-zA-Z0-9]{32}$ ]]; then
-        print_warning "API key doesn't look like a standard 32-character Jackett key"
-        prompt_input "Use it anyway? (y/N)" "n"
-        if [[ ! "${REPLY}" =~ ^[Yy]$ ]]; then
-            continue
-        fi
-    fi
-    break
-done
-
-# Build the JSON config
-JACKETT_JSON=$(cat <<EOF
-{
-    "api_key": "${JACKETT_API_KEY}",
-    "url": "${JACKETT_URL}",
-    "tracker_first": false,
-    "thread_count": 20
-}
-EOF
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from config import prompt_and_save, require_config_value
+from formatting import (
+    get_input,
+    print_error,
+    print_header,
+    print_info,
+    print_step,
+    print_success,
+    print_warning,
 )
 
-# Ensure target directory exists inside the container
-print_step "Ensuring plugin engines directory exists in qBittorrent container"
-if ! docker exec "${QBIT_CONTAINER_NAME}" mkdir -p "$(dirname "${JACKETT_CONFIG_PATH_IN_QBIT}")"; then
-    print_error "Failed to create engines directory inside container"
-    exit 1
-fi
+QBIT_CONTAINER_NAME = "qbittorrent"
+JACKETT_CONTAINER_NAME = "jackett"
+JACKETT_URL = "http://jackett.internal:9117"
+JACKETT_CONFIG_PATH_IN_QBIT = "/config/data/nova3/engines/jackett.json"
+JACKETT_API_KEY_PATTERN = re.compile(r"^[a-zA-Z0-9]{32}$")
 
-# Write the config file into the container via stdin
-print_step "Writing jackett.json into qBittorrent container"
-if echo "${JACKETT_JSON}" | docker exec -i "${QBIT_CONTAINER_NAME}" \
-    sh -c "cat > '${JACKETT_CONFIG_PATH_IN_QBIT}' && chown 1000:1000 '${JACKETT_CONFIG_PATH_IN_QBIT}' && chmod 644 '${JACKETT_CONFIG_PATH_IN_QBIT}'"; then
-    print_success "Wrote ${JACKETT_CONFIG_PATH_IN_QBIT}"
-else
-    print_error "Failed to write jackett.json to container"
-    exit 1
-fi
 
-# Verify the file landed correctly
-print_step "Verifying configuration"
-if docker exec "${QBIT_CONTAINER_NAME}" cat "${JACKETT_CONFIG_PATH_IN_QBIT}" >/dev/null 2>&1; then
-    print_success "Configuration file verified in container"
-else
-    print_error "Could not read back configuration file"
-    exit 1
-fi
+def _container_running(name: str) -> bool:
+    result = subprocess.run(
+        ["docker", "ps", "--format", "{{.Names}}"],
+        capture_output=True,
+        text=True,
+    )
+    return name in result.stdout.splitlines()
 
-# Test connectivity from qBittorrent container to Jackett
-print_step "Testing connectivity from qBittorrent to Jackett"
-if docker exec "${QBIT_CONTAINER_NAME}" sh -c "command -v wget >/dev/null && wget -qO- --timeout=5 ${JACKETT_URL} >/dev/null" 2>/dev/null; then
-    print_success "qBittorrent can reach Jackett at ${JACKETT_URL}"
-elif docker exec "${QBIT_CONTAINER_NAME}" sh -c "command -v curl >/dev/null && curl -sf --max-time 5 ${JACKETT_URL} >/dev/null" 2>/dev/null; then
-    print_success "qBittorrent can reach Jackett at ${JACKETT_URL}"
-else
-    print_warning "Could not verify connectivity to Jackett (wget/curl unavailable, or VPN may be blocking inter-container traffic)"
-    print_warning "If searches fail, check that the qBittorrent VPN config allows access to ${JACKETT_URL}"
-fi
 
-# Restart qBittorrent so it picks up the new plugin config
-#print_step "Restarting qBittorrent container to apply changes"
-#if docker restart "${QBIT_CONTAINER_NAME}" >/dev/null; then
-#    print_success "qBittorrent restarted"
-#else
-#    print_error "Failed to restart qBittorrent container"
-#    exit 1
-#fi
+def _docker_exec(
+    container: str, cmd: list[str], stdin: str | None = None
+) -> subprocess.CompletedProcess:
+    args = ["docker", "exec"]
+    if stdin is not None:
+        args.append("-i")
+    args.append(container)
+    args.extend(cmd)
+    return subprocess.run(
+        args,
+        capture_output=True,
+        text=True,
+        input=stdin,
+    )
 
-print_info ""
-print_info "Next steps:"
-print_info "1. Open the qBittorrent WebUI and go to the Search tab"
-print_info "2. Click 'Search plugins...' and confirm Jackett is enabled"
-print_info "3. Run a test search to verify results come back from Jackett"
+
+def check_containers() -> None:
+    print_step("Checking qBittorrent container status...")
+    if not _container_running(QBIT_CONTAINER_NAME):
+        print_error(
+            f"qBittorrent container '{QBIT_CONTAINER_NAME}' is not running"
+        )
+        print_error("Start it before running this script")
+        sys.exit(1)
+    print_success("qBittorrent container is running")
+
+    if not _container_running(JACKETT_CONTAINER_NAME):
+        print_warning(
+            "Jackett container is not running — config will be written, "
+            "but searches will fail until it is started"
+        )
+
+
+def prompt_api_key() -> str:
+    while True:
+        api_key = prompt_and_save(
+            "JACKETT_API_KEY",
+            "Enter Jackett API key (from the top-right of the Jackett web UI)",
+            secret=True,
+        )
+
+        if JACKETT_API_KEY_PATTERN.match(api_key):
+            return api_key
+
+        print_warning(
+            "API key doesn't look like a standard 32-character Jackett key"
+        )
+        confirm = get_input("Use it anyway? (y/N)", default="n")
+        if confirm.lower() == "y":
+            return api_key
+
+
+def write_jackett_config(api_key: str) -> None:
+    config = {
+        "api_key": api_key,
+        "url": JACKETT_URL,
+        "tracker_first": False,
+        "thread_count": 20,
+    }
+    config_json = json.dumps(config, indent=4)
+    engines_dir = JACKETT_CONFIG_PATH_IN_QBIT.rsplit("/", 1)[0]
+
+    print_step(
+        "Ensuring plugin engines directory exists in qBittorrent container..."
+    )
+    result = _docker_exec(QBIT_CONTAINER_NAME, ["mkdir", "-p", engines_dir])
+    if result.returncode != 0:
+        print_error("Failed to create engines directory inside container")
+        sys.exit(1)
+
+    print_step("Writing jackett.json into qBittorrent container...")
+    result = _docker_exec(
+        QBIT_CONTAINER_NAME,
+        [
+            "sh",
+            "-c",
+            f"cat > '{JACKETT_CONFIG_PATH_IN_QBIT}' "
+            f"&& chown 1000:1000 '{JACKETT_CONFIG_PATH_IN_QBIT}' "
+            f"&& chmod 644 '{JACKETT_CONFIG_PATH_IN_QBIT}'",
+        ],
+        stdin=config_json,
+    )
+    if result.returncode != 0:
+        print_error("Failed to write jackett.json to container")
+        sys.exit(1)
+    print_success(f"Wrote {JACKETT_CONFIG_PATH_IN_QBIT}")
+
+
+def verify_config() -> None:
+    print_step("Verifying configuration...")
+    result = _docker_exec(
+        QBIT_CONTAINER_NAME, ["cat", JACKETT_CONFIG_PATH_IN_QBIT]
+    )
+    if result.returncode != 0:
+        print_error("Could not read back configuration file")
+        sys.exit(1)
+    print_success("Configuration file verified in container")
+
+
+def test_connectivity() -> None:
+    print_step("Testing connectivity from qBittorrent to Jackett...")
+
+    wget_result = _docker_exec(
+        QBIT_CONTAINER_NAME,
+        [
+            "sh",
+            "-c",
+            f"command -v wget >/dev/null && wget -qO- --timeout=5 {JACKETT_URL} >/dev/null",
+        ],
+    )
+    if wget_result.returncode == 0:
+        print_success(f"qBittorrent can reach Jackett at {JACKETT_URL}")
+        return
+
+    curl_result = _docker_exec(
+        QBIT_CONTAINER_NAME,
+        [
+            "sh",
+            "-c",
+            f"command -v curl >/dev/null && curl -sf --max-time 5 {JACKETT_URL} >/dev/null",
+        ],
+    )
+    if curl_result.returncode == 0:
+        print_success(f"qBittorrent can reach Jackett at {JACKETT_URL}")
+        return
+
+    print_warning(
+        "Could not verify connectivity to Jackett "
+        "(wget/curl unavailable, or VPN may be blocking inter-container traffic)"
+    )
+    print_warning(
+        f"If searches fail, check that the qBittorrent VPN config allows access to {JACKETT_URL}"
+    )
+
+
+def main():
+    print_header("SETTING UP JACKETT/QBITTORRENT SEARCH PLUGIN CONFIG")
+
+    media_path = require_config_value("MEDIA_SERVICES_PATH")
+    require_dir(media_path, "Media services path")
+
+    check_containers()
+
+    api_key = prompt_api_key()
+
+    write_jackett_config(api_key)
+
+    verify_config()
+
+    test_connectivity()
+
+    print_info("")
+    print_info("Next steps:")
+    print_info("1. Open the qBittorrent WebUI and go to the Search tab")
+    print_info("2. Click 'Search plugins...' and confirm Jackett is enabled")
+    print_info(
+        "3. Run a test search to verify results come back from Jackett"
+    )
+
+
+if __name__ == "__main__":
+    main()

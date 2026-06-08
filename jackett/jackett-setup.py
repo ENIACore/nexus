@@ -1,64 +1,65 @@
-#!/bin/bash
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+#!/usr/bin/env python3
 
-NEXUS_QBIT_PATH="${NEXUS_MEDIA_SERVICES_PATH}/qbit-data"
-NEXUS_QBIT_CONFIG_PATH="${NEXUS_QBIT_PATH}"
+import sys
 
-NEXUS_JACKETT_OPT_DIR="${NEXUS_OPT_DIR}/jackett"
-JACKETT_CONFIG_DIR="${NEXUS_MEDIA_SERVICES_PATH}/jackett/config"
-JACKETT_DOWNLOADS_DIR="${NEXUS_QBIT_CONFIG_PATH}/jackett/downloads" # Places jackett blackholes in qbit mounted path, to allow for automatic watching
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import ensure_dir
+from config import (
+    DOCKER_NETWORK_NAME,
+    require_config_value,
+)
+from docker import ensure_network, run_container
+from formatting import print_header, print_step
 
-print_header "SETTING UP JACKETT INDEXER"
 
-# Ensure media services path exists
-require_dir "${NEXUS_MEDIA_SERVICES_PATH}" "Media services path"
+def main():
+    print_header("SETTING UP JACKETT INDEXER")
 
-# Create jackett directories
-print_step "Creating Jackett directories"
-mkdir -p "${JACKETT_CONFIG_DIR}"
-mkdir -p "${JACKETT_DOWNLOADS_DIR}"
+    media_path = require_config_value("MEDIA_SERVICES_PATH")
+    root_domain = require_config_value("ROOT_DOMAIN")
 
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
+    require_dir(media_path, "Media services path")
 
-# Run Jackett container
-print_step "Starting Jackett container"
-docker run -d \
-    --name jackett \
-    --hostname jackett.internal \
-    --network nexus-net \
-    -e PUID=1000 \
-    -e PGID=1000 \
-    -e TZ=Etc/UTC \
-    -e AUTO_UPDATE=true \
-    --volume "${JACKETT_CONFIG_DIR}:/config" \
-    --volume "${JACKETT_DOWNLOADS_DIR}:/downloads" \
-    --restart=unless-stopped \
-    lscr.io/linuxserver/jackett:latest
+    jackett_config_dir = f"{media_path}/jackett/config"
+    jackett_downloads_dir = f"{media_path}/qbit-data/jackett/downloads"
 
-# -p 9117:9117 \
+    print_step("Creating Jackett directories...")
+    ensure_dir(jackett_config_dir)
+    ensure_dir(jackett_downloads_dir)
 
-if [ $? -eq 0 ]; then
-    print_success "Jackett container started successfully"
-    print_info ""
-    print_info "Next steps:"
-    print_info "1. Access Jackett at jackett.${NEXUS_DOMAIN} if configured"
-    print_info "2. Configure indexers via the Jackett web UI"
-    print_info "3. Copy the API key from the web UI for use with downstream apps (Sonarr, Radarr, etc.)"
-else
-    print_error "Failed to start Jackett container"
-    exit 1
-fi
+    ensure_network()
+
+    run_container(
+        name="jackett",
+        opts=[
+            "--hostname",
+            "jackett.internal",
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "-e",
+            "PUID=1000",
+            "-e",
+            "PGID=1000",
+            "-e",
+            "TZ=Etc/UTC",
+            "-e",
+            "AUTO_UPDATE=true",
+            "--volume",
+            f"{jackett_config_dir}:/config",
+            "--volume",
+            f"{jackett_downloads_dir}:/downloads",
+            "--restart",
+            "unless-stopped",
+            "lscr.io/linuxserver/jackett:latest",
+        ],
+        notes=[
+            f"Access Jackett at jackett.{root_domain} if nginx is configured",
+            "Configure indexers via the Jackett web UI",
+            "Copy the API key from the web UI for use with Sonarr, Radarr, etc.",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()
