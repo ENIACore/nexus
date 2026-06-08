@@ -17,7 +17,7 @@ from formatting import print_header, print_info
 PG_USER = "postgres"
 PG_HOST = "server-pg"
 PG_PORT = 5432
-PG_DB = "personal_site"
+PG_DB = "postgres"
 
 
 def build_pg_conn_str(password: str) -> str:
