@@ -1,43 +1,56 @@
-#!/bin/bash
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
+#!/usr/bin/env python3
 
-NEXUS_F2B_ETC_DIR="${NEXUS_ETC_DIR}/f2b"
-NEXUS_F2B_OPT_DIR="${NEXUS_OPT_DIR}/f2b"
+import subprocess
+import sys
+import time
 
-# Ensuring jail.local exists
-require_file "${NEXUS_F2B_OPT_DIR}/jail.local" "fail2ban configuration file"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_file
+from common import run_cmd
+from config import F2B_CONFIG_PATH
+from formatting import print_error, print_header, print_step, print_success
 
-print_header "RELOADING FAIL2BAN"
+F2B_JAIL_SRC = F2B_CONFIG_PATH / "jail.local"
+F2B_JAIL_DEST = "/etc/fail2ban/jail.local"
+F2B_PING_RETRIES = 10
 
-# Copying latest jail.local file to fail2ban config directory
-print_step "Copying latest jail.local to ${NEXUS_F2B_ETC_DIR}"
-cp "${NEXUS_F2B_OPT_DIR}/jail.local" "${NEXUS_F2B_ETC_DIR}/jail.local"
 
-# Creating symlink to system fail2ban directory with latest config
-print_step "Ensuring symlink to system fail2ban configuration"
-sudo ln -sf "${NEXUS_F2B_ETC_DIR}/jail.local" /etc/fail2ban/jail.local
+def wait_for_fail2ban() -> bool:
+    """Poll fail2ban-client ping until ready or timeout."""
+    for _ in range(F2B_PING_RETRIES):
+        result = subprocess.run(
+            ["sudo", "fail2ban-client", "ping"],
+            capture_output=True,
+        )
+        if result.returncode == 0:
+            return True
+        time.sleep(1)
+    return False
 
-print_step "Restarting fail2ban service"
-sudo systemctl restart fail2ban
 
-if [ $? -eq 0 ]; then
-    print_success "fail2ban reloaded successfully"
-    
-    # Wait for fail2ban to be fully ready
-    print_step "Waiting for fail2ban to be ready"
-    for i in {1..10}; do
-        if sudo fail2ban-client ping &>/dev/null; then
-            sudo fail2ban-client status
-            exit 0
-        fi
-        sleep 1
-    done
-    
-    print_error "fail2ban started but socket not ready after 10 seconds"
-    exit 1
-else
-    print_error "Failed to reload fail2ban"
-    exit 1
-fi
+def main():
+    print_header("RELOADING FAIL2BAN")
+
+    require_file(str(F2B_JAIL_SRC), "fail2ban configuration file")
+
+    print_step(f"Copying latest jail.local to {F2B_CONFIG_PATH}")
+    run_cmd(f"sudo cp {F2B_JAIL_SRC} {F2B_CONFIG_PATH}/jail.local")
+
+    print_step("Ensuring symlink to system fail2ban configuration")
+    run_cmd(f"sudo ln -sf {F2B_CONFIG_PATH}/jail.local {F2B_JAIL_DEST}")
+
+    print_step("Restarting fail2ban service")
+    run_cmd("sudo systemctl restart fail2ban")
+
+    print_success("fail2ban reloaded successfully")
+
+    print_step("Waiting for fail2ban to be ready...")
+    if wait_for_fail2ban():
+        run_cmd("sudo fail2ban-client status")
+    else:
+        print_error("fail2ban started but socket not ready after 10 seconds")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

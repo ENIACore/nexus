@@ -100,7 +100,7 @@ def run_cmd(cmd: str, capture_output: bool = False) -> CompletedProcess:
         text=True,
     )
     if result.returncode == 0:
-        if capture_output and result.stdout:
+        if not capture_output and result.stdout:
             print_success(result.stdout.strip())
         else:
             print_success("Command completed successfully")
