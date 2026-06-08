@@ -75,3 +75,36 @@ def require_dir(dir_path: str, description: str = "") -> None:
         print_error(f"Required directory not found: {desc}")
         print_error(f"Path: {dir_path}")
         sys.exit(1)
+
+
+def _package_installed(package: str) -> bool:
+    result = subprocess.run(
+        ["dpkg-query", "-W", "-f=${Status}", package],
+        capture_output=True,
+        text=True,
+    )
+    return "install ok installed" in result.stdout
+
+
+def ensure_packages(packages: list[str]) -> None:
+    """Ensure apt packages are installed, installing any that are missing."""
+    missing = [p for p in packages if not _package_installed(p)]
+
+    if not missing:
+        for p in packages:
+            print_info(f"Validated package '{p}' is installed")
+        return
+
+    for p in missing:
+        print_info(f"Package '{p}' not found, installing...")
+
+    result = subprocess.run(
+        ["sudo", "apt-get", "install", "-y", *missing],
+    )
+
+    if result.returncode == 0:
+        for p in missing:
+            print_success(f"Package '{p}' installed")
+    else:
+        print_error(f"Failed to install packages: {', '.join(missing)}")
+        sys.exit(1)

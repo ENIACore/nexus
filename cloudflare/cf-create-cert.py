@@ -4,7 +4,7 @@ import argparse
 import sys
 
 sys.path.insert(0, "/usr/local/sbin/_lib")
-from checks import require_dir, require_file
+from checks import ensure_packages, require_dir, require_file
 from common import run_cmd
 from config import CF_CONFIG_PATH, require_config_value
 from formatting import print_header, print_step, print_success, print_warning
@@ -64,4 +64,5 @@ def main():
 
 
 if __name__ == "__main__":
+    ensure_packages(["certbot", "python3-certbot-dns-cloudflare"])
     main()
