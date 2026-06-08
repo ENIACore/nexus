@@ -36,10 +36,10 @@ def main():
             f"PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin",
             f"",
             f"# Run on boot",
-            f"@reboot {SERVER_USER} {CF_DNS_SCRIPT}",
+            f"@reboot {SERVER_USER} {CF_DNS_SCRIPT} >> /var/log/cloudflare/cron.log 2>&1",
             f"",
             f"# Run every 5 minutes",
-            f"{CF_CRON_SCHEDULE} {SERVER_USER} {CF_DNS_SCRIPT}",
+            f"{CF_CRON_SCHEDULE} {SERVER_USER} {CF_DNS_SCRIPT} >> /var/log/cloudflare/cron.log 2>&1",
         ],
     )
 
