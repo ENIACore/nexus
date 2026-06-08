@@ -42,8 +42,8 @@ SERVER_USER: str = "server"
 
 # Docker settings
 DOCKER_NETWORK_NAME: str = "server-net"
-DOCKER_NETWORK_SUBNET: str = "172.18.0.0/16"
-DOCKER_NETWORK_GATEWAY: str = "172.18.0.1"
+DOCKER_NETWORK_SUBNET: str = "172.20.0.0/24"
+DOCKER_NETWORK_GATEWAY: str = "172.20.0.1"
 
 
 def load_config() -> dict:
