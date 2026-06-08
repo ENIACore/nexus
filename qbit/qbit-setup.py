@@ -5,7 +5,7 @@ import sys
 sys.path.insert(0, "/usr/local/sbin/_lib")
 from checks import require_dir, require_file
 from common import ensure_dir, run_cmd
-from config import DOCKER_NETWORK_NAME, require_config_value
+from config import DOCKER_NETWORK_NAME, QBIT_CONFIG_PATH, require_config_value
 from docker import ensure_network, run_container
 from formatting import print_header, print_step
 
@@ -16,7 +16,7 @@ from formatting import print_header, print_step
 # container traffic on the docker network bypasses the VPN automatically.
 VPN_LAN_CIDR = "192.168.1.0/24"
 
-WG_CONF_SRC = "/etc/server/keys/wg0.conf"
+WG_CONF_SRC = QBIT_CONFIG_PATH / "/wg0.conf"
 
 
 def main():
@@ -25,7 +25,7 @@ def main():
     media_path = require_config_value("MEDIA_SERVICES_PATH")
     qbit_subdomain = require_config_value("QBIT_SUBDOMAIN")
 
-    require_file(WG_CONF_SRC, "WireGuard config file (wg0.conf)")
+    require_file(str(WG_CONF_SRC), "WireGuard config file (wg0.conf)")
     require_dir(media_path, "Media services path")
 
     qbit_path = f"{media_path}/qbit-data"
