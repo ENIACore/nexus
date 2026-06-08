@@ -1,92 +1,110 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import sys
 
-NEXUS_NGINX_ETC_DIR="/etc/nexus/nginx"
-NEXUS_NGINX_OPT_DIR="/opt/nexus/nginx"
-NEXUS_NGINX_VAR_DIR="/var/www/nexus"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import copy_path, ensure_dir
+from config import (
+    DOCKER_NETWORK_NAME,
+    NGINX_CONFIG_PATH,
+    require_config_value,
+)
+from docker import ensure_network, run_container
+from formatting import print_header, print_step
 
-print_header "CREATING NEXUS REVERSE PROXY"
+NGINX_LOG_DIR = "/var/log/nginx"
+NGINX_VAR_DIR = "/var/www/server"
+NGINX_SRC_PATH = NGINX_CONFIG_PATH / "nginx"
 
-# Ensure letsencrypt files present 
-require_dir "/etc/letsencrypt/live/${NEXUS_DOMAIN}" "Letsencrypt directory containing SSL certificates" 
-
-# Ensure docker network exists
-if ! docker network inspect nexus-net >/dev/null 2>&1; then
-    print_step "Creating Docker network 'nexus-net'"
-
-    if ! docker network create \
-        --driver bridge \
-        --subnet 172.18.0.0/16 \
-        --gateway 172.18.0.1 \
-        nexus-net >/dev/null 2>&1; then
-        print_error "Failed to create Docker network 'nexus-net' (subnet or gateway already in use, choose a new range)"
-        exit 1
-    fi
-fi
-
-# Copy nginx configuration from opt to /etc/nexus/nginx
-print_step "Copying nginx configuration to /etc/nexus/nginx"
-mkdir -p "${NEXUS_NGINX_ETC_DIR}"
-cp -r "${NEXUS_NGINX_OPT_DIR}/conf" "${NEXUS_NGINX_ETC_DIR}/"
-cp -r "${NEXUS_NGINX_OPT_DIR}/conf.d" "${NEXUS_NGINX_ETC_DIR}/"
-cp -r "${NEXUS_NGINX_OPT_DIR}/snippets" "${NEXUS_NGINX_ETC_DIR}/"
-
-# Create sites-enabled directory
-print_step "Creating sites-enabled directory at ${NEXUS_NGINX_ETC_DIR}/sites-enabled"
-mkdir -p "${NEXUS_NGINX_ETC_DIR}/sites-enabled"
-
-# Create streams-enabled directory
-print_step "Creating streams-enabled directory at ${NEXUS_NGINX_ETC_DIR}/streams-enabled"
-mkdir -p "${NEXUS_NGINX_ETC_DIR}/streams-enabled"
-
-NEXUS_NGINX_LOG_DIR="${NEXUS_LOG_DIR}/nginx"
-print_step "Creating container log dir at ${NEXUS_NGINX_LOG_DIR}"
-mkdir -p "${NEXUS_NGINX_LOG_DIR}"
+# Static IP for the proxy container — must be within DOCKER_NETWORK_SUBNET
+# and reserved so no other container is assigned this address
+NGINX_CONTAINER_IP = "172.20.0.254"
 
 
-print_info "To enable sites:"
-print_info "1. Move site configs to ${NEXUS_NGINX_ETC_DIR}/sites-enabled directory"
-print_info "2. Run ${NEXUS_NGINX_OPT_DIR}/update.sh script to ensure most up to date snippets and conf files"
-print_info "3. Run ${NEXUS_NGINX_OPT_DIR}/reload.sh script to reload running nexus proxy container"
+def copy_nginx_config() -> None:
+    print_step("Copying nginx configuration to {NGINX_CONFIG_PATH}...")
+    for subdir in [
+        "conf",
+        "conf.d",
+        "snippets",
+        "sites-available",
+        "streams-available",
+    ]:
+        copy_path(NGINX_SRC_PATH / subdir, NGINX_CONFIG_PATH / subdir)
 
-# Create nginx log directory
-print_step "Creating nginx log directory"
-mkdir -p /var/log/nexus/nginx
+    for subdir in ["sites-enabled", "streams-enabled"]:
+        print_step(f"Creating {NGINX_CONFIG_PATH / subdir}...")
+        ensure_dir(str(NGINX_CONFIG_PATH / subdir))
 
-# Then in your docker run command, replace the --log-driver lines with:
-docker run -d \
-    --name nexus-proxy \
-    --restart unless-stopped \
-    --network nexus-net \
-    --ip 172.18.0.254 \
-    -p 80:80 \
-    -p 443:443 \
-    -p 25565:25565 \
-    --read-only \
-    -v "${NEXUS_NGINX_ETC_DIR}/conf/nginx.conf:/etc/nginx/nginx.conf:ro" \
-    -v "${NEXUS_NGINX_ETC_DIR}/conf.d:/etc/nginx/conf.d:ro" \
-    -v "${NEXUS_NGINX_ETC_DIR}/snippets:/etc/nginx/snippets:ro" \
-    -v "${NEXUS_NGINX_ETC_DIR}/sites-enabled:/etc/nginx/sites-enabled:ro" \
-    -v "${NEXUS_NGINX_ETC_DIR}/streams-enabled:/etc/nginx/streams-enabled:ro" \
-    -v "/etc/letsencrypt:/etc/letsencrypt:ro" \
-    -v "${NEXUS_NGINX_LOG_DIR}:/var/log/nginx:rw" \
-    -v "${NEXUS_NGINX_VAR_DIR}:/var/www:ro" \
-    --tmpfs /var/cache/nginx:rw,noexec,nosuid,size=100m \
-    --tmpfs /var/run:rw,noexec,nosuid,size=10m \
-    --health-cmd="nginx -t" \
-    --health-interval=30s \
-    --health-timeout=3s \
-    --health-retries=3 \
-    --health-start-period=30s \
-    nginx:latest
 
-if [ $? -eq 0 ]; then
-    print_success "Nexus reverse proxy container started successfully"
-else
-    print_error "Failed to start nexus reverse proxy container"
-    exit 1
-fi
+def main():
+    print_header("CREATING SERVER REVERSE PROXY")
+
+    root_domain = require_config_value("ROOT_DOMAIN")
+
+    require_dir(
+        f"/etc/letsencrypt/live/{root_domain}",
+        "Letsencrypt SSL certificates directory",
+    )
+
+    copy_nginx_config()
+
+    print_step(f"Creating nginx log directory at {NGINX_LOG_DIR}...")
+    ensure_dir(NGINX_LOG_DIR)
+
+    ensure_network()
+
+    run_container(
+        name="server-proxy",
+        opts=[
+            "--restart",
+            "unless-stopped",
+            "--network",
+            DOCKER_NETWORK_NAME,
+            "--ip",
+            NGINX_CONTAINER_IP,
+            "-p",
+            "80:80",
+            "-p",
+            "443:443",
+            "-p",
+            "25565:25565",
+            "--read-only",
+            "-v",
+            f"{NGINX_CONFIG_PATH}/conf/nginx.conf:/etc/nginx/nginx.conf:ro",
+            "-v",
+            f"{NGINX_CONFIG_PATH}/conf.d:/etc/nginx/conf.d:ro",
+            "-v",
+            f"{NGINX_CONFIG_PATH}/snippets:/etc/nginx/snippets:ro",
+            "-v",
+            f"{NGINX_CONFIG_PATH}/sites-enabled:/etc/nginx/sites-enabled:ro",
+            "-v",
+            f"{NGINX_CONFIG_PATH}/streams-enabled:/etc/nginx/streams-enabled:ro",
+            "-v",
+            "/etc/letsencrypt:/etc/letsencrypt:ro",
+            "-v",
+            f"{NGINX_LOG_DIR}:/var/log/nginx:rw",
+            "-v",
+            f"{NGINX_VAR_DIR}:/var/www:ro",
+            "--tmpfs",
+            "/var/cache/nginx:rw,noexec,nosuid,size=100m",
+            "--tmpfs",
+            "/var/run:rw,noexec,nosuid,size=10m",
+            "--health-cmd=nginx -t",
+            "--health-interval=30s",
+            "--health-timeout=3s",
+            "--health-retries=3",
+            "--health-start-period=30s",
+            "nginx:latest",
+        ],
+        notes=[
+            f"Move site configs to {NGINX_CONFIG_PATH}/sites-enabled to enable them",
+            "Run nginx-update to pull the latest snippets and conf files",
+            "Run nginx-reload to reload the running proxy container",
+        ],
+    )
+
+
+if __name__ == "__main__":
+    main()

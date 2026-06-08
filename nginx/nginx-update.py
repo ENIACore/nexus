@@ -1,26 +1,36 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import shutil
+import sys
 
-NEXUS_NGINX_ETC_DIR="/etc/nexus/nginx"
-NEXUS_NGINX_OPT_DIR="/opt/nexus/nginx"
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from checks import require_dir
+from common import copy_path
+from config import NGINX_CONFIG_PATH, SERVER_CLONE_PATH
+from formatting import print_header, print_info, print_step, print_success
 
-print_header "UPDATING NEXUS REVERSE PROXY CONFIGURATION"
+NGINX_SRC_PATH = SERVER_CLONE_PATH / "nginx"
+NGINX_SUBDIRS = ["conf", "conf.d", "snippets"]
 
-# Remove old configuration files
-print_step "Removing old configuration files"
-rm -rf "${NEXUS_NGINX_ETC_DIR}/conf"/*
-rm -rf "${NEXUS_NGINX_ETC_DIR}/conf.d"/*
-rm -rf "${NEXUS_NGINX_ETC_DIR}/snippets"/*
 
-# Copy fresh configuration from opt
-print_step "Copying updated nginx configuration to /etc/nexus/nginx"
-cp -r "${NEXUS_NGINX_OPT_DIR}/conf"/* "${NEXUS_NGINX_ETC_DIR}/conf/"
-cp -r "${NEXUS_NGINX_OPT_DIR}/conf.d"/* "${NEXUS_NGINX_ETC_DIR}/conf.d/"
-cp -r "${NEXUS_NGINX_OPT_DIR}/snippets"/* "${NEXUS_NGINX_ETC_DIR}/snippets/"
+def main():
+    print_header("UPDATING SERVER REVERSE PROXY CONFIGURATION")
 
-print_success "Configuration files updated successfully"
-print_info "Run ${NEXUS_NGINX_OPT_DIR}/reload.sh to apply changes to the running container"
+    require_dir(str(NGINX_SRC_PATH), "Nginx source directory")
+
+    print_step("Removing old configuration files...")
+    for subdir in NGINX_SUBDIRS:
+        dest = NGINX_CONFIG_PATH / subdir
+        if dest.exists():
+            shutil.rmtree(dest)
+
+    print_step("Copying updated nginx configuration...")
+    for subdir in NGINX_SUBDIRS:
+        copy_path(NGINX_SRC_PATH / subdir, NGINX_CONFIG_PATH / subdir)
+
+    print_success("Configuration files updated successfully")
+    print_info("Run nginx-reload to apply changes to the running container")
+
+
+if __name__ == "__main__":
+    main()

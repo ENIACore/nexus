@@ -1,13 +1,27 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/checks.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
-source "${NEXUS_OPT_DIR}/lib/log.sh"
+import subprocess
+import sys
 
-if docker exec nexus-proxy nginx -s reload; then
-    print_info "Nginx reloaded successfully"
-else
-    print_error "Failed to reload nginx"
-    exit 1
-fi
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from formatting import print_error, print_header, print_success
+
+NGINX_CONTAINER_NAME = "server-proxy"
+
+
+def main():
+    print_header("RELOADING NGINX")
+
+    result = subprocess.run(
+        ["docker", "exec", NGINX_CONTAINER_NAME, "nginx", "-s", "reload"],
+        capture_output=True,
+    )
+    if result.returncode == 0:
+        print_success("Nginx reloaded successfully")
+    else:
+        print_error("Failed to reload nginx")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
