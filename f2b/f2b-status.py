@@ -1,13 +1,27 @@
-#!/bin/bash
-source "/etc/nexus/conf/conf.sh"
-source "${NEXUS_OPT_DIR}/lib/print.sh"
+#!/usr/bin/env python3
 
-print_header "FAIL2BAN NGINX JAIL STATUS"
+import sys
 
-JAILS=("nginx-http-auth" "nginx-bad-request" "nginx-botsearch" "nginx-limit-req" "sshd")
+sys.path.insert(0, "/usr/local/sbin/_lib")
+from common import run_cmd
+from formatting import print_header, print_info
 
-for jail in "${JAILS[@]}"; do
-    print_step "${jail}"
-    sudo fail2ban-client status "${jail}"
-    print_info ""
-done
+JAILS = [
+    "nginx-http-auth",
+    "nginx-bad-request",
+    "nginx-botsearch",
+    "nginx-limit-req",
+    "sshd",
+]
+
+
+def main():
+    print_header("FAIL2BAN NGINX JAIL STATUS")
+
+    for jail in JAILS:
+        run_cmd(f"sudo fail2ban-client status {jail}")
+        print_info("")
+
+
+if __name__ == "__main__":
+    main()
